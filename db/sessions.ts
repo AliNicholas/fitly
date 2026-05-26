@@ -9,6 +9,7 @@ export interface SessionExercise {
   sets: number | null;
   reps: number | null;
   weight: number | null; // null/0 indicates bodyweight (BW)
+  is_time?: number | null;
   order: number;
 }
 
@@ -69,13 +70,14 @@ export async function addSession(
       for (let i = 0; i < exercises.length; i++) {
         const ex = exercises[i];
         await db.runAsync(
-          'INSERT INTO session_exercises (session_id, exercise_id, sets, reps, weight, "order") VALUES (?, ?, ?, ?, ?, ?)',
+          'INSERT INTO session_exercises (session_id, exercise_id, sets, reps, weight, is_time, "order") VALUES (?, ?, ?, ?, ?, ?, ?)',
           [
             insertedSessionId,
             ex.exercise_id,
             ex.sets || null,
             ex.reps || null,
             ex.weight !== null && ex.weight !== undefined && String(ex.weight) !== '' ? parseFloat(ex.weight.toString()) : null,
+            ex.is_time || 0,
             i
           ]
         );
@@ -108,13 +110,14 @@ export async function updateSession(
       for (let i = 0; i < exercises.length; i++) {
         const ex = exercises[i];
         await db.runAsync(
-          'INSERT INTO session_exercises (session_id, exercise_id, sets, reps, weight, "order") VALUES (?, ?, ?, ?, ?, ?)',
+          'INSERT INTO session_exercises (session_id, exercise_id, sets, reps, weight, is_time, "order") VALUES (?, ?, ?, ?, ?, ?, ?)',
           [
             id,
             ex.exercise_id,
             ex.sets || null,
             ex.reps || null,
             ex.weight !== null && ex.weight !== undefined && String(ex.weight) !== '' ? parseFloat(ex.weight.toString()) : null,
+            ex.is_time || 0,
             i
           ]
         );

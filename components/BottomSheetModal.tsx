@@ -7,8 +7,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  SafeAreaView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
@@ -20,6 +20,7 @@ interface BottomSheetModalProps {
 }
 
 export function BottomSheetModal({ visible, onClose, title, children }: BottomSheetModalProps) {
+  const insets = useSafeAreaInsets();
   const handleClose = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onClose();
@@ -44,32 +45,32 @@ export function BottomSheetModal({ visible, onClose, title, children }: BottomSh
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="w-full max-h-[90%] bg-surface-dark border-t border-borderColor-dark rounded-t-3xl shadow-2xl"
         >
-          <SafeAreaView className="w-full">
+          <View style={{ paddingBottom: Math.max(insets.bottom, 20) }} className="w-full">
             {/* Header / Drag indicator simulation */}
             <View className="items-center py-2">
-              <View className="w-12 h-1.5 bg-borderColor-dark/40 rounded-full" />
+              <View className="w-14 h-1.5 bg-borderColor-dark/40 rounded-full" />
             </View>
 
             {/* Header Content */}
             <View className="flex-row items-center justify-between px-4 pb-3 border-b border-borderColor-dark/20">
-              <Text className="text-text-primary-dark font-bold text-lg">{title}</Text>
+              <Text className="text-text-primary-dark font-bold text-xl">{title}</Text>
               <TouchableOpacity
                 onPress={handleClose}
                 className="p-1 bg-surface-light-dark border border-borderColor-dark rounded-full"
               >
-                <X color="#94a3b8" size={16} />
+                <X color="#94a3b8" size={20} />
               </TouchableOpacity>
             </View>
 
             {/* Scrollable Form Body */}
             <ScrollView
-              className="px-4 py-3"
-              contentContainerStyle={{ paddingBottom: 40 }}
+              className="px-5 py-4"
+              contentContainerStyle={{ paddingBottom: 48 }}
               keyboardShouldPersistTaps="handled"
             >
               {children}
             </ScrollView>
-          </SafeAreaView>
+          </View>
         </KeyboardAvoidingView>
       </View>
     </Modal>

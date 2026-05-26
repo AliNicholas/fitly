@@ -43,6 +43,7 @@ export async function initDb() {
       sets INTEGER,
       reps INTEGER,
       weight REAL,
+      is_time INTEGER DEFAULT 0,
       "order" INTEGER,
       FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE,
       FOREIGN KEY (exercise_id) REFERENCES exercises (id) ON DELETE CASCADE
@@ -53,6 +54,14 @@ export async function initDb() {
       value TEXT
     );
   `);
+
+  // Migrate existing tables
+  try {
+    await db.execAsync('ALTER TABLE session_exercises ADD COLUMN is_time INTEGER DEFAULT 0;');
+    console.log('Migrated: added is_time column successfully.');
+  } catch (e) {
+    // Column already exists, ignore
+  }
 
   // Seed default categories if none exist
   try {

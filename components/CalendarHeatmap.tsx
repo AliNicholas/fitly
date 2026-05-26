@@ -92,21 +92,21 @@ export function CalendarHeatmap({ dates }: { dates: string[] }) {
   ];
 
   return (
-    <View className="bg-surface-dark border border-borderColor-dark/40 rounded-2xl p-4 shadow-md space-y-4">
+    <View className="bg-surface-dark border border-borderColor-dark/40 rounded-3xl p-5 shadow-lg gap-4 flex-col">
       {/* Header Controls */}
-      <View className="flex-row items-center justify-between mb-4">
+      <View className="flex-row justify-between items-center mb-4 flex-wrap gap-y-2.5">
         <View className="flex-row items-center gap-2">
-          <Flame color="#f97316" size={22} />
+          <Flame color="#f43f5e" size={24} />
           <Text className="text-text-primary-dark font-bold text-lg">Activity Calendar</Text>
         </View>
-        <View className="flex-row items-center bg-surface-light-dark border border-borderColor-dark rounded-xl px-1 py-1">
-          <TouchableOpacity onPress={prevMonth} className="p-1 rounded-lg">
+        <View className="flex-row items-center bg-surface-light-dark border border-borderColor-dark rounded-2xl px-1 py-1">
+          <TouchableOpacity onPress={prevMonth} className="p-1.5 rounded-xl">
             <ChevronLeft color="#94a3b8" size={18} />
           </TouchableOpacity>
-          <Text className="text-text-primary-dark font-semibold text-xs w-24 text-center px-1">
+          <Text className="text-text-primary-dark font-bold text-xs w-24 text-center px-1">
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </Text>
-          <TouchableOpacity onPress={nextMonth} className="p-1 rounded-lg">
+          <TouchableOpacity onPress={nextMonth} className="p-1.5 rounded-xl">
             <ChevronRight color="#94a3b8" size={18} />
           </TouchableOpacity>
         </View>
@@ -117,7 +117,7 @@ export function CalendarHeatmap({ dates }: { dates: string[] }) {
         {/* Week Days Headers */}
         <View className="flex-row justify-between mb-2">
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-            <Text key={i} className="text-center text-xs font-semibold text-text-secondary-dark w-[13.5%] uppercase">
+            <Text key={i} className="text-center text-sm font-semibold text-text-secondary-dark w-[13.5%] uppercase">
               {day}
             </Text>
           ))}
@@ -129,16 +129,16 @@ export function CalendarHeatmap({ dates }: { dates: string[] }) {
             <View
               key={i}
               className={`
-                w-[13.5%] aspect-square flex items-center justify-center rounded-xl mb-2 border transition-all
+                w-[13.5%] aspect-square flex items-center justify-center rounded-2xl mb-2 border transition-all
                 ${!day.isCurrentMonth ? 'border-transparent opacity-20' : 'border-borderColor-dark/10'}
                 ${day.active
-                  ? 'bg-green-500 border-green-600 shadow-sm shadow-green-500/20'
+                  ? 'bg-brand-500 border-brand-600 shadow-sm shadow-brand-500/30'
                   : 'bg-surface-light-dark border-borderColor-dark/30'}
               `}
             >
               <Text
                 className={`
-                  text-xs font-semibold
+                  text-sm font-semibold
                   ${day.active ? 'text-white' : day.isCurrentMonth ? 'text-text-primary-dark' : 'text-text-secondary-dark'}
                 `}
               >

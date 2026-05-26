@@ -29,34 +29,34 @@ export function FavoriteExercisesTable({ exercises }: { exercises: FavoriteExerc
   };
 
   return (
-    <View className="bg-surface-dark border border-borderColor-dark/40 rounded-2xl p-4 shadow-md space-y-4">
+    <View className="bg-surface-dark border border-borderColor-dark/40 rounded-3xl p-5 shadow-md gap-4 flex-col">
       {/* Title */}
       <View className="flex-row items-center gap-2 mb-2">
-        <Trophy color="#eab308" size={22} />
-        <Text className="text-text-primary-dark font-bold text-lg">Favorite Exercises</Text>
+        <Trophy color="#eab308" size={26} />
+        <Text className="text-text-primary-dark font-bold text-xl">Favorite Exercises</Text>
       </View>
 
       {/* Exercises List */}
-      <View className="space-y-3">
+      <View className="gap-3 flex-col">
         {currentExercises.map((ex, i) => (
           <View
             key={ex.id}
-            className="flex-row items-center justify-between p-3 bg-surface-light-dark/40 border border-borderColor-dark/20 rounded-xl"
+            className="flex-row items-center justify-between p-3 bg-surface-light-dark/40 border border-borderColor-dark/20 rounded-2xl"
           >
             <View className="flex-1 mr-3">
               <View className="flex-row items-center flex-wrap mb-1.5">
-                <Text className="text-text-primary-dark font-semibold text-sm mr-2">
+                <Text className="text-text-primary-dark font-semibold text-base mr-2">
                   {startIndex + i + 1}. {ex.name}
                 </Text>
                 {ex.category_name && (
                   <View className="bg-brand-900/30 border border-brand-500/20 rounded-full px-2 py-0.5">
-                    <Text className="text-brand-400 font-medium text-[9px] uppercase tracking-wider">
+                    <Text className="text-brand-400 font-medium text-[11px] uppercase tracking-wider">
                       {ex.category_name}
                     </Text>
                   </View>
                 )}
               </View>
-              <Text className="text-text-secondary-dark text-xs font-medium">
+              <Text className="text-text-secondary-dark text-sm font-medium">
                 Logs: <Text className="text-brand-400 font-bold">{ex.log_count}</Text>  •  Max Reps: <Text className="text-text-primary-dark font-semibold">{ex.max_reps || '-'}</Text>  •  Max Weight: <Text className="text-text-primary-dark font-semibold">{ex.max_weight != null ? `${ex.max_weight} kg` : 'BW'}</Text>
               </Text>
             </View>
@@ -67,23 +67,23 @@ export function FavoriteExercisesTable({ exercises }: { exercises: FavoriteExerc
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <View className="flex-row justify-between items-center pt-3 border-t border-borderColor-dark/30 mt-2">
-          <Text className="text-xs text-text-secondary-dark">
+          <Text className="text-sm text-text-secondary-dark">
             Page {currentPage} of {totalPages}
           </Text>
           <View className="flex-row gap-2">
             <TouchableOpacity
               onPress={handlePrevPage}
               disabled={currentPage === 1}
-              className={`p-2 bg-surface-light-dark border border-borderColor-dark rounded-xl ${currentPage === 1 ? 'opacity-40' : ''}`}
+              className={`p-2.5 bg-surface-light-dark border border-borderColor-dark rounded-2xl ${currentPage === 1 ? 'opacity-40' : ''}`}
             >
-              <ChevronLeft color="#94a3b8" size={16} />
+              <ChevronLeft color="#94a3b8" size={20} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleNextPage}
               disabled={currentPage === totalPages}
-              className={`p-2 bg-surface-light-dark border border-borderColor-dark rounded-xl ${currentPage === totalPages ? 'opacity-40' : ''}`}
+              className={`p-2.5 bg-surface-light-dark border border-borderColor-dark rounded-2xl ${currentPage === totalPages ? 'opacity-40' : ''}`}
             >
-              <ChevronRight color="#94a3b8" size={16} />
+              <ChevronRight color="#94a3b8" size={20} />
             </TouchableOpacity>
           </View>
         </View>

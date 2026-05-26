@@ -1,6 +1,6 @@
-# Fitly Mobile 🏋️‍♂️✨
+# Fitly 🏋️‍♂️✨
 
-**Fitly Mobile** is a modern, state-of-the-art mobile fitness tracker and AI-powered workout companion built with **Expo (React Native)**, **TypeScript**, **Tailwind CSS (NativeWind)**, and local storage powered by **Expo SQLite**. It leverages Google's advanced **Gemini AI** to act as a personal fitness assistant, helping users generate exercises, plan sessions, track stats, and stay motivated.
+**Fitly** is a modern, state-of-the-art mobile fitness tracker and AI-powered workout companion built with **Expo (React Native)**, **TypeScript**, **Tailwind CSS (NativeWind)**, and local storage powered by **Expo SQLite**. It leverages Google's advanced **Gemini AI** to act as a personal fitness assistant, helping users generate exercises, plan sessions, track stats, and stay motivated.
 
 ---
 
@@ -26,7 +26,7 @@ Ensure you have the following installed on your machine:
 
 1. Clone the repository and navigate to the project directory:
    ```bash
-   cd fitly-mobile
+   cd fitly
    ```
 
 2. Install the package dependencies:

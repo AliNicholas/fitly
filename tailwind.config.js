@@ -10,31 +10,38 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          900: '#1e3a8a',
+          50: '#f5f3ff',
+          100: '#ede9fe',
+          400: '#a78bfa',
+          500: '#8b5cf6',
+          600: '#7c3aed',
+          700: '#6d28d9',
+          900: '#4c1d95',
         },
-        // We will define these dynamically or let the css variables handle it,
-        // or configure separate light/dark colors in tailwind
-        // Using tailwind's native mapping
+        accent: {
+          400: '#22d3ee',
+          500: '#06b6d4',
+          600: '#0891b2',
+        },
+        energy: {
+          400: '#fb7185',
+          500: '#f43f5e',
+          600: '#e11d48',
+        },
         background: {
           light: '#f8fafc',
-          dark: '#020617',
-          DEFAULT: '#020617', // Default to dark first!
+          dark: '#050510',
+          DEFAULT: '#050510',
         },
         surface: {
           light: '#ffffff',
-          dark: '#0f172a',
-          DEFAULT: '#0f172a',
+          dark: '#0f0f23',
+          DEFAULT: '#0f0f23',
         },
         'surface-light': {
           light: '#f1f5f9',
-          dark: '#1e293b',
-          DEFAULT: '#1e293b',
+          dark: '#1a1a38',
+          DEFAULT: '#1a1a38',
         },
         'text-primary': {
           light: '#0f172a',
@@ -48,8 +55,8 @@ module.exports = {
         },
         borderColor: {
           light: '#e2e8f0',
-          dark: '#334155',
-          DEFAULT: '#334155',
+          dark: '#2a2a4a',
+          DEFAULT: '#2a2a4a',
         }
       },
       fontFamily: {

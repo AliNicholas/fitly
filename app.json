@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "fitly-mobile",
-    "slug": "fitly-mobile",
+    "name": "fitly",
+    "slug": "fitly",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "fitlymobile",
+    "scheme": "fitly",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true

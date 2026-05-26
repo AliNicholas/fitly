@@ -10,13 +10,21 @@ import {
   FlatList,
   Keyboard,
   ScrollView,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MessageSquare, Send, Loader2, Check, X, AlertTriangle, Key } from 'lucide-react-native';
 import { getSettings } from '../../db/settings';
 import { getSessions } from '../../db/sessions';
 import { getCategories, addCategory } from '../../db/categories';
 import { addExercise } from '../../db/exercises';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 interface ChatMessage {
@@ -40,6 +48,7 @@ interface CategoryMap {
 
 export default function AssistantScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -163,7 +172,6 @@ export default function AssistantScreen() {
                     properties: {
                       name: { type: 'STRING', description: 'Name of the exercise' },
                       category_id: { type: 'INTEGER', description: 'ID of the category (must use existing category ID)' },
-                      description: { type: 'STRING', description: 'Description of the exercise' },
                     },
                     required: ['name', 'category_id'],
                   },
@@ -219,6 +227,7 @@ export default function AssistantScreen() {
     };
 
     let updatedHistory = overrideHistory ? [...overrideHistory, userMsg] : [...messages, userMsg];
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setMessages(updatedHistory);
     setIsAiResponding(true);
 
@@ -255,6 +264,7 @@ export default function AssistantScreen() {
               : undefined,
           };
           updatedHistory = [...updatedHistory, modelMsg];
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           setMessages(updatedHistory);
         }
 
@@ -273,6 +283,7 @@ export default function AssistantScreen() {
               },
             };
             updatedHistory = [...updatedHistory, toolResponseMsg];
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setMessages(updatedHistory);
             // Continue the loop to let Gemini process the sessions database
           } else if (call.name === 'get_categories') {
@@ -286,11 +297,13 @@ export default function AssistantScreen() {
               },
             };
             updatedHistory = [...updatedHistory, toolResponseMsg];
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setMessages(updatedHistory);
             // Continue the loop to let Gemini process the categories database
           } else {
             // It is a WRITE call (add_exercise or add_category)
             // Halt the automatic loop, return the pending action card to user
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setPendingAction({
               name: call.name,
               args: call.args,
@@ -305,6 +318,7 @@ export default function AssistantScreen() {
     } catch (err: any) {
       console.error(err);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setMessages((prev) => [
         ...prev,
         {
@@ -314,6 +328,7 @@ export default function AssistantScreen() {
         },
       ]);
     } finally {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setIsAiResponding(false);
     }
   };
@@ -325,6 +340,7 @@ export default function AssistantScreen() {
     setIsAiResponding(true);
 
     const action = pendingAction;
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setPendingAction(null);
 
     let success = false;
@@ -332,8 +348,8 @@ export default function AssistantScreen() {
 
     try {
       if (action.name === 'add_exercise') {
-        const { name, category_id, description } = action.args;
-        await addExercise(name, category_id, description || null);
+        const { name, category_id } = action.args;
+        await addExercise(name, category_id, null);
         success = true;
       } else if (action.name === 'add_category') {
         const { name } = action.args;
@@ -357,6 +373,7 @@ export default function AssistantScreen() {
     };
 
     const newMsgs = [...messages, systemResponseMsg];
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setMessages(newMsgs);
 
     if (success) {
@@ -377,6 +394,7 @@ export default function AssistantScreen() {
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const action = pendingAction;
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setPendingAction(null);
 
     // Send cancel tool response
@@ -390,6 +408,7 @@ export default function AssistantScreen() {
     };
 
     const newMsgs = [...messages, systemResponseMsg];
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setMessages(newMsgs);
 
     await handleSendMessage(
@@ -409,19 +428,30 @@ export default function AssistantScreen() {
       return null;
     }
 
-    const isUser = item.role === 'user';
+    if (item.isSystemMessage) {
+      return (
+        <View className="flex-row justify-center my-2.5 px-4">
+          <View className="bg-surface-light border border-borderColor-dark/15 px-4 py-2 rounded-2xl">
+            <Text className="text-text-secondary-dark text-sm font-semibold uppercase tracking-wider text-center">
+              {item.text}
+            </Text>
+          </View>
+        </View>
+      );
+    }
 
+    const isUser = item.role === 'user';
     return (
-      <View className={`flex-row ${isUser ? 'justify-end' : 'justify-start'} my-2 px-1`}>
+      <View className={`flex-row ${isUser ? 'justify-end' : 'justify-start'} my-2.5 px-1`}>
         <View
-          className={`max-w-[85%] px-4 py-3 rounded-2xl ${
+          className={`max-w-[85%] px-5 py-3.5 rounded-3xl ${
             isUser
               ? 'bg-brand-600 rounded-tr-none'
               : 'bg-surface-light border border-borderColor-dark/25 rounded-tl-none'
           }`}
         >
           <Text
-            className={`text-sm leading-5 font-sans ${
+            className={`text-base leading-6 font-sans ${
               isUser ? 'text-white' : 'text-text-primary-dark'
             }`}
           >
@@ -434,9 +464,9 @@ export default function AssistantScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-[#020617] justify-center items-center">
-        <ActivityIndicator size="large" color="#3b82f6" />
-        <Text className="text-[#94a3b8] font-medium mt-4">Initializing Coach...</Text>
+      <View className="flex-1 bg-[#050510] justify-center items-center">
+        <ActivityIndicator size="large" color="#8b5cf6" />
+        <Text className="text-text-secondary-dark font-medium text-base mt-4">Initializing Coach...</Text>
       </View>
     );
   }
@@ -444,20 +474,27 @@ export default function AssistantScreen() {
   // Warning screen if Gemini key is missing
   if (!apiKey) {
     return (
-      <View className="flex-1 bg-[#020617] px-6 justify-center items-center">
-        <View className="bg-surface-dark border border-borderColor-dark/40 rounded-3xl p-6 items-center w-full shadow-lg">
-          <View className="p-4 bg-brand-900/30 border border-brand-500/20 rounded-2xl mb-4">
-            <Key color="#60a5fa" size={32} />
+      <View className="flex-1 bg-[#050510] px-6 justify-center items-center">
+        <View className="bg-surface-dark border border-borderColor-dark/40 rounded-3xl p-7 items-center w-full shadow-xl">
+          <View className="p-5 bg-brand-900/40 border border-brand-500/30 rounded-3xl mb-4">
+            <Key color="#a78bfa" size={36} />
           </View>
-          <Text className="text-text-primary-dark font-extrabold text-xl text-center">API Key Required</Text>
-          <Text className="text-text-secondary-dark text-sm text-center mt-2.5 mb-6 leading-5">
+          <Text className="text-text-primary-dark font-extrabold text-2xl text-center">API Key Required</Text>
+          <Text className="text-text-secondary-dark text-base text-center mt-2.5 mb-6 leading-6">
             To chat with your Fitly AI Coach, please configure your Google Gemini API Key in the Settings tab.
           </Text>
           <TouchableOpacity
             onPress={() => router.navigate('/(tabs)/settings' as any)}
-            className="w-full bg-brand-500 py-3.5 rounded-xl justify-center items-center shadow-lg shadow-brand-500/10"
+            className="w-full shadow-lg shadow-brand-500/20"
           >
-            <Text className="text-white font-bold text-sm">Configure in Settings</Text>
+            <LinearGradient
+              colors={['#8b5cf6', '#06b6d4']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              className="py-4 rounded-2xl items-center justify-center"
+            >
+              <Text className="text-white font-bold text-base">Configure in Settings</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
@@ -465,81 +502,82 @@ export default function AssistantScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      className="flex-1 bg-[#020617]"
-    >
+    <View style={{ paddingTop: insets.top }} className="flex-1 bg-[#050510]">
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        className="flex-1 bg-[#050510]"
+      >
       <FlatList
         ref={flatListRef}
         data={messages}
         renderItem={renderMessageItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
         ListFooterComponent={
           <>
             {/* Show pending action proposal card */}
             {pendingAction && (
-              <View className="my-4 bg-amber-950/20 border border-amber-500/30 rounded-2xl p-4 shadow-sm">
-                <View className="flex-row items-center space-x-2 pb-2.5 mb-3 border-b border-amber-500/10">
-                  <AlertTriangle color="#f59e0b" size={18} />
-                  <Text className="text-amber-400 font-bold text-sm uppercase tracking-wider">
+              <View className="my-4 bg-amber-950/20 border border-amber-500/30 rounded-3xl p-5 shadow-md">
+                <View className="flex-row items-center gap-2 pb-2.5 mb-3 border-b border-amber-500/10">
+                  <AlertTriangle color="#f59e0b" size={22} />
+                  <Text className="text-amber-400 font-bold text-base uppercase tracking-wider">
                     Approval Required
                   </Text>
                 </View>
 
-                <Text className="text-amber-100/90 text-sm leading-5 mb-3.5">
+                <Text className="text-amber-100/90 text-base leading-6 mb-4">
                   The AI coach wants to add a new{' '}
                   {pendingAction.name === 'add_exercise' ? 'exercise' : 'category'}:
                 </Text>
 
                 {/* Preformatted visual details table */}
-                <View className="bg-black/40 border border-amber-500/15 rounded-xl p-3 mb-4 space-y-2">
+                <View className="bg-black/40 border border-amber-500/15 rounded-3xl p-4 mb-4 gap-3 flex-col">
                   {pendingAction.name === 'add_category' ? (
                     <View className="flex-row justify-between py-1">
-                      <Text className="text-amber-200/50 text-xs font-semibold uppercase">Name</Text>
-                      <Text className="text-amber-100 font-medium text-xs">{pendingAction.args.name}</Text>
+                      <Text className="text-amber-200/50 text-sm font-semibold uppercase">Name</Text>
+                      <Text className="text-amber-100 font-medium text-sm">{pendingAction.args.name}</Text>
                     </View>
                   ) : (
                     <>
                       <View className="flex-row justify-between py-1 border-b border-amber-500/5">
-                        <Text className="text-amber-200/50 text-xs font-semibold uppercase">Exercise Name</Text>
-                        <Text className="text-amber-100 font-medium text-xs">{pendingAction.args.name}</Text>
+                        <Text className="text-amber-200/50 text-sm font-semibold uppercase">Exercise Name</Text>
+                        <Text className="text-amber-100 font-medium text-sm">{pendingAction.args.name}</Text>
                       </View>
-                      <View className="flex-row justify-between py-1 border-b border-amber-500/5">
-                        <Text className="text-amber-200/50 text-xs font-semibold uppercase">Category</Text>
-                        <Text className="text-amber-100 font-medium text-xs">
+                      <View className="flex-row justify-between py-1">
+                        <Text className="text-amber-200/50 text-sm font-semibold uppercase">Category</Text>
+                        <Text className="text-amber-100 font-medium text-sm">
                           {categories[pendingAction.args.category_id] || `ID: ${pendingAction.args.category_id}`}
                         </Text>
                       </View>
-                      {pendingAction.args.description && (
-                        <View className="flex-col pt-1.5 space-y-1">
-                          <Text className="text-amber-200/50 text-[10px] font-semibold uppercase">Description</Text>
-                          <Text className="text-amber-200 font-normal text-xs leading-4">
-                            {pendingAction.args.description}
-                          </Text>
-                        </View>
-                      )}
                     </>
                   )}
                 </View>
 
                 {/* Action buttons */}
-                <View className="flex-row space-x-2.5">
+                <View className="flex-row gap-3">
                   <TouchableOpacity
                     onPress={handleConfirmAction}
-                    className="flex-1 bg-amber-500 py-3.5 rounded-xl flex-row justify-center items-center space-x-1.5 shadow-sm shadow-amber-500/10"
+                    className="flex-1 shadow shadow-amber-500/10"
                   >
-                    <Check color="#ffffff" size={16} />
-                    <Text className="text-white font-bold text-xs">Approve</Text>
+                    <LinearGradient
+                      colors={['#8b5cf6', '#06b6d4']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      className="py-4 rounded-2xl flex-row justify-center items-center gap-1.5"
+                    >
+                      <Check color="#ffffff" size={20} />
+                      <Text className="text-white font-bold text-sm">Approve</Text>
+                    </LinearGradient>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={handleCancelAction}
-                    className="flex-1 border border-red-500/30 bg-red-950/10 py-3.5 rounded-xl flex-row justify-center items-center space-x-1.5"
+                    className="flex-1 border border-red-500/30 bg-red-950/10 py-4 rounded-2xl flex-row justify-center items-center gap-1.5"
                   >
-                    <X color="#f87171" size={16} />
-                    <Text className="text-red-400 font-bold text-xs">Reject</Text>
+                    <X color="#f87171" size={20} />
+                    <Text className="text-red-400 font-bold text-sm">Reject</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -547,10 +585,10 @@ export default function AssistantScreen() {
 
             {/* Coach typing status */}
             {isAiResponding && !pendingAction && (
-              <View className="flex-row justify-start my-2 px-1">
-                <View className="bg-surface-light border border-borderColor-dark/25 px-4 py-3 rounded-2xl rounded-tl-none flex-row items-center space-x-2">
-                  <Loader2 className="animate-spin" color="#3b82f6" size={16} />
-                  <Text className="text-text-secondary-dark text-xs font-medium">Coach is thinking...</Text>
+              <View className="flex-row justify-start my-2.5 px-1">
+                <View className="bg-surface-light border border-borderColor-dark/25 px-5 py-3.5 rounded-3xl rounded-tl-none flex-row items-center gap-2">
+                  <Loader2 className="animate-spin" color="#8b5cf6" size={20} />
+                  <Text className="text-text-secondary-dark text-sm font-medium">Coach is thinking...</Text>
                 </View>
               </View>
             )}
@@ -559,30 +597,42 @@ export default function AssistantScreen() {
       />
 
       {/* Input bar */}
-      <View className="p-4 border-t border-borderColor-dark/30 bg-surface-dark/40 backdrop-blur-md">
-        <View className="flex-row space-x-3.5 items-center">
+      <View className="p-5 border-t border-borderColor-dark/30 bg-surface-dark/40 backdrop-blur-md">
+        <View className="flex-row gap-3.5 items-center">
           <TextInput
             value={inputText}
             onChangeText={setInputText}
             placeholder="Ask your coach or add an exercise..."
             placeholderTextColor="#475569"
             editable={!isAiResponding && !pendingAction}
-            className="flex-1 bg-surface-dark border border-borderColor-dark/50 rounded-xl px-4 py-3 text-text-primary-dark text-sm max-h-24"
+            className="flex-1 bg-surface-dark border border-borderColor-dark/50 rounded-3xl px-5 py-3.5 text-text-primary-dark text-base max-h-24"
             multiline={true}
           />
-          <TouchableOpacity
-            onPress={() => handleSendMessage()}
-            disabled={isAiResponding || !!pendingAction || !inputText.trim()}
-            className={`w-11 h-11 rounded-xl items-center justify-center shadow-sm ${
-              isAiResponding || !!pendingAction || !inputText.trim()
-                ? 'bg-borderColor-dark/35 opacity-40'
-                : 'bg-brand-500 shadow-brand-500/10'
-            }`}
-          >
-            <Send color="#ffffff" size={16} />
-          </TouchableOpacity>
+          {isAiResponding || !!pendingAction || !inputText.trim() ? (
+            <TouchableOpacity
+              disabled={true}
+              className="w-12 h-12 rounded-2xl items-center justify-center bg-borderColor-dark/35 opacity-40"
+            >
+              <Send color="#ffffff" size={20} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={() => handleSendMessage()}
+              className="shadow-md shadow-brand-500/10"
+            >
+              <LinearGradient
+                colors={['#8b5cf6', '#06b6d4']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="w-12 h-12 rounded-2xl items-center justify-center"
+              >
+                <Send color="#ffffff" size={20} />
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-    </KeyboardAvoidingView>
+     </KeyboardAvoidingView>
+    </View>
   );
 }
