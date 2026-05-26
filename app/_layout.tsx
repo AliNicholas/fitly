@@ -1,56 +1,69 @@
-import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import '../global.css';
+import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { DarkTheme, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/components/useColorScheme';
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator, Text } from 'react-native';
+import { initDb } from '../db/database';
 
 export {
-  // Catch any errors thrown by the Layout component.
   ErrorBoundary,
 } from 'expo-router';
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: '(tabs)',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  const [dbLoaded, setDbLoaded] = useState(false);
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
+  // Catch any errors during font loading
   useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+    if (fontError) throw fontError;
+  }, [fontError]);
 
+  // Initialize SQLite database
   useEffect(() => {
-    if (loaded) {
+    async function setupDatabase() {
+      try {
+        await initDb();
+        setDbLoaded(true);
+      } catch (e) {
+        console.error('Failed to initialize database:', e);
+        // Even if DB fails, let app load so we show error screen or fallback
+        setDbLoaded(true);
+      }
+    }
+    setupDatabase();
+  }, []);
+
+  // Hide splash screen when fonts and database are ready
+  useEffect(() => {
+    if (fontsLoaded && dbLoaded) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [fontsLoaded, dbLoaded]);
 
-  if (!loaded) {
-    return null;
+  if (!fontsLoaded || !dbLoaded) {
+    return (
+      <View className="flex-1 bg-[#020617] items-center justify-center">
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text className="text-[#94a3b8] font-medium mt-4">Setting up your workout vault...</Text>
+      </View>
+    );
   }
 
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    </Stack>
   );
 }

@@ -1,0 +1,153 @@
+import React, { useState, useMemo } from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { Flame, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
+
+export function CalendarHeatmap({ dates }: { dates: string[] }) {
+  const [currentDate, setCurrentDate] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d;
+  });
+
+  const activeDates = useMemo(() => {
+    return new Set(dates.map((d) => {
+      // Split YYYY-MM-DD to avoid timezone offset shifts
+      const parts = d.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        return new Date(year, month, day, 12, 0, 0).toDateString();
+      }
+      return new Date(d + 'T12:00:00').toDateString();
+    }));
+  }, [dates]);
+
+  const prevMonth = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setCurrentDate((prev) => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() - 1);
+      return d;
+    });
+  };
+
+  const nextMonth = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setCurrentDate((prev) => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() + 1);
+      return d;
+    });
+  };
+
+  const calendarDays = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const startDayOfWeek = firstDay.getDay(); // 0-6
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    const days = [];
+
+    // Pad previous month
+    for (let i = startDayOfWeek - 1; i >= 0; i--) {
+      days.push({
+        day: daysInPrevMonth - i,
+        isCurrentMonth: false,
+        active: false,
+      });
+    }
+
+    // Current month
+    for (let i = 1; i <= daysInMonth; i++) {
+      const d = new Date(year, month, i, 12, 0, 0);
+      days.push({
+        day: i,
+        isCurrentMonth: true,
+        active: activeDates.has(d.toDateString()),
+      });
+    }
+
+    // Pad next month
+    const remainingCells = 42 - days.length;
+    for (let i = 1; i <= remainingCells; i++) {
+      days.push({
+        day: i,
+        isCurrentMonth: false,
+        active: false,
+      });
+    }
+
+    return days;
+  }, [currentDate, activeDates]);
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  return (
+    <View className="bg-surface-dark border border-borderColor-dark/40 rounded-2xl p-4 shadow-md space-y-4">
+      {/* Header Controls */}
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center gap-2">
+          <Flame color="#f97316" size={22} />
+          <Text className="text-text-primary-dark font-bold text-lg">Activity Calendar</Text>
+        </View>
+        <View className="flex-row items-center bg-surface-light-dark border border-borderColor-dark rounded-xl px-1 py-1">
+          <TouchableOpacity onPress={prevMonth} className="p-1 rounded-lg">
+            <ChevronLeft color="#94a3b8" size={18} />
+          </TouchableOpacity>
+          <Text className="text-text-primary-dark font-semibold text-xs w-24 text-center px-1">
+            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+          </Text>
+          <TouchableOpacity onPress={nextMonth} className="p-1 rounded-lg">
+            <ChevronRight color="#94a3b8" size={18} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Grid Calendar */}
+      <View className="w-full">
+        {/* Week Days Headers */}
+        <View className="flex-row justify-between mb-2">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+            <Text key={i} className="text-center text-xs font-semibold text-text-secondary-dark w-[13.5%] uppercase">
+              {day}
+            </Text>
+          ))}
+        </View>
+
+        {/* Days Grid */}
+        <View className="flex-row flex-wrap justify-between">
+          {calendarDays.map((day, i) => (
+            <View
+              key={i}
+              className={`
+                w-[13.5%] aspect-square flex items-center justify-center rounded-xl mb-2 border transition-all
+                ${!day.isCurrentMonth ? 'border-transparent opacity-20' : 'border-borderColor-dark/10'}
+                ${day.active
+                  ? 'bg-green-500 border-green-600 shadow-sm shadow-green-500/20'
+                  : 'bg-surface-light-dark border-borderColor-dark/30'}
+              `}
+            >
+              <Text
+                className={`
+                  text-xs font-semibold
+                  ${day.active ? 'text-white' : day.isCurrentMonth ? 'text-text-primary-dark' : 'text-text-secondary-dark'}
+                `}
+              >
+                {day.day}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    </View>
+  );
+}

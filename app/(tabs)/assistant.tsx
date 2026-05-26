@@ -1,0 +1,588 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  FlatList,
+  Keyboard,
+  ScrollView,
+} from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { MessageSquare, Send, Loader2, Check, X, AlertTriangle, Key } from 'lucide-react-native';
+import { getSettings } from '../../db/settings';
+import { getSessions } from '../../db/sessions';
+import { getCategories, addCategory } from '../../db/categories';
+import { addExercise } from '../../db/exercises';
+import * as Haptics from 'expo-haptics';
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'model' | 'tool';
+  text?: string;
+  functionCall?: {
+    name: string;
+    args: any;
+  };
+  functionResponse?: {
+    name: string;
+    response: any;
+  };
+  isSystemMessage?: boolean;
+}
+
+interface CategoryMap {
+  [id: number]: string;
+}
+
+export default function AssistantScreen() {
+  const router = useRouter();
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Chat stream
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: 'welcome',
+      role: 'model',
+      text: "Hi! I'm your Fitly AI Coach. I can help summarize your progress, give workout advice, or add new exercises/categories. What's on your mind today?",
+    },
+  ]);
+  const [inputText, setInputText] = useState('');
+  const [isAiResponding, setIsAiResponding] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ name: string; args: any } | null>(null);
+  const [categories, setCategories] = useState<CategoryMap>({});
+
+  const flatListRef = useRef<FlatList>(null);
+
+  // Fetch settings & category mapping on focus
+  const loadConfig = useCallback(async () => {
+    try {
+      const data = await getSettings();
+      setApiKey(data.gemini_api_key || null);
+      
+      const cats = await getCategories();
+      const mapping: CategoryMap = {};
+      cats.forEach((c) => {
+        mapping[c.id] = c.name;
+      });
+      setCategories(mapping);
+      
+      setLoading(false);
+    } catch (e) {
+      console.error('Failed to load assistant configuration:', e);
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadConfig();
+    }, [loadConfig])
+  );
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [messages, pendingAction, isAiResponding]);
+
+  // Construct standard Gemini API payload from ChatMessage history
+  const buildGeminiPayload = (history: ChatMessage[]) => {
+    return history
+      .filter((m) => !m.isSystemMessage) // skip system messages that are just visual confirmations
+      .map((m) => {
+        const parts: any[] = [];
+        if (m.text) {
+          parts.push({ text: m.text });
+        }
+        if (m.functionCall) {
+          parts.push({
+            functionCall: {
+              name: m.functionCall.name,
+              args: m.functionCall.args,
+            },
+          });
+        }
+        if (m.functionResponse) {
+          parts.push({
+            functionResponse: {
+              name: m.functionResponse.name,
+              response: m.functionResponse.response,
+            },
+          });
+        }
+        
+        // Tool role is mapped to "function" in API, otherwise matches role
+        return {
+          role: m.role === 'tool' ? 'function' : m.role,
+          parts,
+        };
+      });
+  };
+
+  // Central Gemini request executor
+  const executeGeminiCall = async (currentHistory: ChatMessage[]): Promise<any> => {
+    if (!apiKey) throw new Error('API key is missing');
+
+    const payloadContents = buildGeminiPayload(currentHistory);
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: payloadContents,
+          systemInstruction: {
+            parts: [
+              {
+                text: "You are a helpful workout assistant. You can check the user's progress by calling get_sessions. You can propose adding new exercises or categories, but the user must confirm them. When the user asks about their workout history or stats, call get_sessions to get accurate, up-to-date data. Do not make up session info.",
+              },
+            ],
+          },
+          tools: [
+            {
+              functionDeclarations: [
+                {
+                  name: 'get_sessions',
+                  description: 'Get the list of all workout sessions and exercises to provide progress summary and insights.',
+                  parameters: { type: 'OBJECT', properties: {} },
+                },
+                {
+                  name: 'add_exercise',
+                  description: 'Propose adding a new exercise. IMPORTANT: The user will be asked to confirm this. Do not assume it is added until they confirm.',
+                  parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                      name: { type: 'STRING', description: 'Name of the exercise' },
+                      category_id: { type: 'INTEGER', description: 'ID of the category (must use existing category ID)' },
+                      description: { type: 'STRING', description: 'Description of the exercise' },
+                    },
+                    required: ['name', 'category_id'],
+                  },
+                },
+                {
+                  name: 'get_categories',
+                  description: 'Get the list of all exercise categories.',
+                  parameters: { type: 'OBJECT', properties: {} },
+                },
+                {
+                  name: 'add_category',
+                  description: 'Propose adding a new exercise category. The user must confirm this.',
+                  parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                      name: { type: 'STRING', description: 'Name of the category' },
+                    },
+                    required: ['name'],
+                  },
+                },
+              ],
+            },
+          ],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API Error: ${response.status} - ${errorText}`);
+    }
+
+    return await response.json();
+  };
+
+  const handleSendMessage = async (customText?: string, overrideHistory?: ChatMessage[]) => {
+    const textToSend = customText !== undefined ? customText : inputText;
+    if (!textToSend.trim()) return;
+
+    Keyboard.dismiss();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    if (customText === undefined) {
+      setInputText('');
+    }
+
+    // Append new user message
+    const userMsg: ChatMessage = {
+      id: Math.random().toString(),
+      role: 'user',
+      text: textToSend,
+      isSystemMessage: customText !== undefined && textToSend.startsWith('[System]'),
+    };
+
+    let updatedHistory = overrideHistory ? [...overrideHistory, userMsg] : [...messages, userMsg];
+    setMessages(updatedHistory);
+    setIsAiResponding(true);
+
+    try {
+      let keepCalling = true;
+      let iterations = 0;
+      const maxIterations = 8; // prevent infinite loops
+
+      while (keepCalling && iterations < maxIterations) {
+        iterations++;
+        const apiResponse = await executeGeminiCall(updatedHistory);
+        const candidate = apiResponse.candidates?.[0];
+        const parts = candidate?.content?.parts;
+
+        if (!parts || parts.length === 0) {
+          throw new Error('Received empty response from AI model.');
+        }
+
+        // Search for text parts and function call parts
+        const textPart = parts.find((p: any) => p.text);
+        const functionCallPart = parts.find((p: any) => p.functionCall);
+
+        // Group them into a single model message to avoid consecutive roles
+        if (textPart?.text || functionCallPart?.functionCall) {
+          const modelMsg: ChatMessage = {
+            id: Math.random().toString(),
+            role: 'model',
+            text: textPart?.text || undefined,
+            functionCall: functionCallPart?.functionCall
+              ? {
+                  name: functionCallPart.functionCall.name,
+                  args: functionCallPart.functionCall.args,
+                }
+              : undefined,
+          };
+          updatedHistory = [...updatedHistory, modelMsg];
+          setMessages(updatedHistory);
+        }
+
+        // 2. If there's a function call
+        if (functionCallPart?.functionCall) {
+          const call = functionCallPart.functionCall;
+
+          if (call.name === 'get_sessions') {
+            const sessionsData = await getSessions();
+            const toolResponseMsg: ChatMessage = {
+              id: Math.random().toString(),
+              role: 'tool',
+              functionResponse: {
+                name: call.name,
+                response: { sessions: sessionsData },
+              },
+            };
+            updatedHistory = [...updatedHistory, toolResponseMsg];
+            setMessages(updatedHistory);
+            // Continue the loop to let Gemini process the sessions database
+          } else if (call.name === 'get_categories') {
+            const categoriesData = await getCategories();
+            const toolResponseMsg: ChatMessage = {
+              id: Math.random().toString(),
+              role: 'tool',
+              functionResponse: {
+                name: call.name,
+                response: { categories: categoriesData },
+              },
+            };
+            updatedHistory = [...updatedHistory, toolResponseMsg];
+            setMessages(updatedHistory);
+            // Continue the loop to let Gemini process the categories database
+          } else {
+            // It is a WRITE call (add_exercise or add_category)
+            // Halt the automatic loop, return the pending action card to user
+            setPendingAction({
+              name: call.name,
+              args: call.args,
+            });
+            keepCalling = false;
+          }
+        } else {
+          // No function calls, normal text response complete
+          keepCalling = false;
+        }
+      }
+    } catch (err: any) {
+      console.error(err);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(),
+          role: 'model',
+          text: `⚠️ Error: ${err.message || 'Failed to communicate with AI Coach.'}`,
+        },
+      ]);
+    } finally {
+      setIsAiResponding(false);
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    if (!pendingAction) return;
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setIsAiResponding(true);
+
+    const action = pendingAction;
+    setPendingAction(null);
+
+    let success = false;
+    let errorMessage = '';
+
+    try {
+      if (action.name === 'add_exercise') {
+        const { name, category_id, description } = action.args;
+        await addExercise(name, category_id, description || null);
+        success = true;
+      } else if (action.name === 'add_category') {
+        const { name } = action.args;
+        await addCategory(name);
+        success = true;
+      }
+    } catch (e: any) {
+      console.error(e);
+      success = false;
+      errorMessage = e.message || 'Unknown database write error';
+    }
+
+    // Append system status to messages history
+    const systemResponseMsg: ChatMessage = {
+      id: Math.random().toString(),
+      role: 'tool',
+      functionResponse: {
+        name: action.name,
+        response: success ? { success: true } : { success: false, error: errorMessage },
+      },
+    };
+
+    const newMsgs = [...messages, systemResponseMsg];
+    setMessages(newMsgs);
+
+    if (success) {
+      await handleSendMessage(
+        `[System] 👍 Approved: Added ${action.name === 'add_exercise' ? 'exercise' : 'category'} "${action.args.name}"`,
+        newMsgs
+      );
+    } else {
+      await handleSendMessage(
+        `[System] ⚠️ Error: Failed to add item: ${errorMessage}`,
+        newMsgs
+      );
+    }
+  };
+
+  const handleCancelAction = async () => {
+    if (!pendingAction) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const action = pendingAction;
+    setPendingAction(null);
+
+    // Send cancel tool response
+    const systemResponseMsg: ChatMessage = {
+      id: Math.random().toString(),
+      role: 'tool',
+      functionResponse: {
+        name: action.name,
+        response: { success: false, error: 'User cancelled the action' },
+      },
+    };
+
+    const newMsgs = [...messages, systemResponseMsg];
+    setMessages(newMsgs);
+
+    await handleSendMessage(
+      `[System] ❌ Rejected: Did not add ${action.name === 'add_exercise' ? 'exercise' : 'category'} "${action.args.name}"`,
+      newMsgs
+    );
+  };
+
+  // Rendering individual messages
+  const renderMessageItem = ({ item }: { item: ChatMessage }) => {
+    if (item.role === 'tool') {
+      return null; // hide technical tool messages from chat bubble stream
+    }
+
+    // Hide intermediate functionCall model request messages only if they have no text to display
+    if (item.role === 'model' && item.functionCall && !item.text) {
+      return null;
+    }
+
+    const isUser = item.role === 'user';
+
+    return (
+      <View className={`flex-row ${isUser ? 'justify-end' : 'justify-start'} my-2 px-1`}>
+        <View
+          className={`max-w-[85%] px-4 py-3 rounded-2xl ${
+            isUser
+              ? 'bg-brand-600 rounded-tr-none'
+              : 'bg-surface-light border border-borderColor-dark/25 rounded-tl-none'
+          }`}
+        >
+          <Text
+            className={`text-sm leading-5 font-sans ${
+              isUser ? 'text-white' : 'text-text-primary-dark'
+            }`}
+          >
+            {item.text?.startsWith('[System] ') ? item.text.substring(9) : item.text}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-[#020617] justify-center items-center">
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text className="text-[#94a3b8] font-medium mt-4">Initializing Coach...</Text>
+      </View>
+    );
+  }
+
+  // Warning screen if Gemini key is missing
+  if (!apiKey) {
+    return (
+      <View className="flex-1 bg-[#020617] px-6 justify-center items-center">
+        <View className="bg-surface-dark border border-borderColor-dark/40 rounded-3xl p-6 items-center w-full shadow-lg">
+          <View className="p-4 bg-brand-900/30 border border-brand-500/20 rounded-2xl mb-4">
+            <Key color="#60a5fa" size={32} />
+          </View>
+          <Text className="text-text-primary-dark font-extrabold text-xl text-center">API Key Required</Text>
+          <Text className="text-text-secondary-dark text-sm text-center mt-2.5 mb-6 leading-5">
+            To chat with your Fitly AI Coach, please configure your Google Gemini API Key in the Settings tab.
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.navigate('/(tabs)/settings' as any)}
+            className="w-full bg-brand-500 py-3.5 rounded-xl justify-center items-center shadow-lg shadow-brand-500/10"
+          >
+            <Text className="text-white font-bold text-sm">Configure in Settings</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      className="flex-1 bg-[#020617]"
+    >
+      <FlatList
+        ref={flatListRef}
+        data={messages}
+        renderItem={renderMessageItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+        ListFooterComponent={
+          <>
+            {/* Show pending action proposal card */}
+            {pendingAction && (
+              <View className="my-4 bg-amber-950/20 border border-amber-500/30 rounded-2xl p-4 shadow-sm">
+                <View className="flex-row items-center space-x-2 pb-2.5 mb-3 border-b border-amber-500/10">
+                  <AlertTriangle color="#f59e0b" size={18} />
+                  <Text className="text-amber-400 font-bold text-sm uppercase tracking-wider">
+                    Approval Required
+                  </Text>
+                </View>
+
+                <Text className="text-amber-100/90 text-sm leading-5 mb-3.5">
+                  The AI coach wants to add a new{' '}
+                  {pendingAction.name === 'add_exercise' ? 'exercise' : 'category'}:
+                </Text>
+
+                {/* Preformatted visual details table */}
+                <View className="bg-black/40 border border-amber-500/15 rounded-xl p-3 mb-4 space-y-2">
+                  {pendingAction.name === 'add_category' ? (
+                    <View className="flex-row justify-between py-1">
+                      <Text className="text-amber-200/50 text-xs font-semibold uppercase">Name</Text>
+                      <Text className="text-amber-100 font-medium text-xs">{pendingAction.args.name}</Text>
+                    </View>
+                  ) : (
+                    <>
+                      <View className="flex-row justify-between py-1 border-b border-amber-500/5">
+                        <Text className="text-amber-200/50 text-xs font-semibold uppercase">Exercise Name</Text>
+                        <Text className="text-amber-100 font-medium text-xs">{pendingAction.args.name}</Text>
+                      </View>
+                      <View className="flex-row justify-between py-1 border-b border-amber-500/5">
+                        <Text className="text-amber-200/50 text-xs font-semibold uppercase">Category</Text>
+                        <Text className="text-amber-100 font-medium text-xs">
+                          {categories[pendingAction.args.category_id] || `ID: ${pendingAction.args.category_id}`}
+                        </Text>
+                      </View>
+                      {pendingAction.args.description && (
+                        <View className="flex-col pt-1.5 space-y-1">
+                          <Text className="text-amber-200/50 text-[10px] font-semibold uppercase">Description</Text>
+                          <Text className="text-amber-200 font-normal text-xs leading-4">
+                            {pendingAction.args.description}
+                          </Text>
+                        </View>
+                      )}
+                    </>
+                  )}
+                </View>
+
+                {/* Action buttons */}
+                <View className="flex-row space-x-2.5">
+                  <TouchableOpacity
+                    onPress={handleConfirmAction}
+                    className="flex-1 bg-amber-500 py-3.5 rounded-xl flex-row justify-center items-center space-x-1.5 shadow-sm shadow-amber-500/10"
+                  >
+                    <Check color="#ffffff" size={16} />
+                    <Text className="text-white font-bold text-xs">Approve</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleCancelAction}
+                    className="flex-1 border border-red-500/30 bg-red-950/10 py-3.5 rounded-xl flex-row justify-center items-center space-x-1.5"
+                  >
+                    <X color="#f87171" size={16} />
+                    <Text className="text-red-400 font-bold text-xs">Reject</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* Coach typing status */}
+            {isAiResponding && !pendingAction && (
+              <View className="flex-row justify-start my-2 px-1">
+                <View className="bg-surface-light border border-borderColor-dark/25 px-4 py-3 rounded-2xl rounded-tl-none flex-row items-center space-x-2">
+                  <Loader2 className="animate-spin" color="#3b82f6" size={16} />
+                  <Text className="text-text-secondary-dark text-xs font-medium">Coach is thinking...</Text>
+                </View>
+              </View>
+            )}
+          </>
+        }
+      />
+
+      {/* Input bar */}
+      <View className="p-4 border-t border-borderColor-dark/30 bg-surface-dark/40 backdrop-blur-md">
+        <View className="flex-row space-x-3.5 items-center">
+          <TextInput
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Ask your coach or add an exercise..."
+            placeholderTextColor="#475569"
+            editable={!isAiResponding && !pendingAction}
+            className="flex-1 bg-surface-dark border border-borderColor-dark/50 rounded-xl px-4 py-3 text-text-primary-dark text-sm max-h-24"
+            multiline={true}
+          />
+          <TouchableOpacity
+            onPress={() => handleSendMessage()}
+            disabled={isAiResponding || !!pendingAction || !inputText.trim()}
+            className={`w-11 h-11 rounded-xl items-center justify-center shadow-sm ${
+              isAiResponding || !!pendingAction || !inputText.trim()
+                ? 'bg-borderColor-dark/35 opacity-40'
+                : 'bg-brand-500 shadow-brand-500/10'
+            }`}
+          >
+            <Send color="#ffffff" size={16} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
