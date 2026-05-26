@@ -12,6 +12,8 @@ import {
   ScrollView,
   LayoutAnimation,
   UIManager,
+  Animated,
+  Easing,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -21,11 +23,139 @@ import { getSessions } from '../../db/sessions';
 import { getCategories, addCategory } from '../../db/categories';
 import { addExercise } from '../../db/exercises';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental && !((global as any)?.FabricUIManager)) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import Markdown from 'react-native-markdown-display';
+
+// Infinitely rotating loader icon
+const SpinningLoader = ({ color = '#8b5cf6', size = 20 }: { color?: string; size?: number }) => {
+  const spinValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 1000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [spinValue]);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  return (
+    <Animated.View style={{ transform: [{ rotate: spin }] }}>
+      <Loader2 color={color} size={size} />
+    </Animated.View>
+  );
+};
+
+// Markdown styling for model messages
+const markdownStyles = {
+  body: {
+    color: '#ffffff',
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  paragraph: {
+    marginTop: 0,
+    marginBottom: 8,
+  },
+  strong: {
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  em: {
+    fontStyle: 'italic',
+  },
+  link: {
+    color: '#a78bfa',
+    textDecorationLine: 'underline',
+  },
+  list_item: {
+    color: '#ffffff',
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 4,
+  },
+  bullet_list: {
+    marginBottom: 8,
+  },
+  ordered_list: {
+    marginBottom: 8,
+  },
+  hr: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    height: 1,
+    marginVertical: 12,
+  },
+  code_inline: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+    color: '#a78bfa',
+  },
+  code_block: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 8,
+    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+    color: '#ffffff',
+  },
+  fence: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 8,
+    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+    color: '#ffffff',
+  },
+  heading1: {
+    color: '#ffffff',
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginVertical: 8,
+  },
+  heading2: {
+    color: '#ffffff',
+    fontSize: 19,
+    fontWeight: 'bold',
+    marginVertical: 6,
+  },
+  heading3: {
+    color: '#ffffff',
+    fontSize: 17,
+    fontWeight: 'bold',
+    marginVertical: 4,
+  },
+};
+
+// Markdown styling for user messages
+const userMarkdownStyles = {
+  ...markdownStyles,
+  body: {
+    ...markdownStyles.body,
+    color: '#ffffff',
+  },
+  strong: {
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  link: {
+    color: '#ffffff',
+    textDecorationLine: 'underline',
+  },
+};
 
 interface ChatMessage {
   id: string;
@@ -66,6 +196,25 @@ export default function AssistantScreen() {
   const [categories, setCategories] = useState<CategoryMap>({});
 
   const flatListRef = useRef<FlatList>(null);
+
+  // Android keyboard height tracking - must be declared here (before early returns) to satisfy Rules of Hooks
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Fetch settings & category mapping on focus
   const loadConfig = useCallback(async () => {
@@ -152,7 +301,27 @@ export default function AssistantScreen() {
           systemInstruction: {
             parts: [
               {
-                text: "You are a helpful workout assistant. You can check the user's progress by calling get_sessions. You can propose adding new exercises or categories, but the user must confirm them. When the user asks about their workout history or stats, call get_sessions to get accurate, up-to-date data. Do not make up session info.",
+                text: `You are Fitly Coach, an elite personal training assistant. 
+
+When communicating, ALWAYS use rich Markdown formatting (bold, italics, headers, list items, code blocks) to make your messages look beautiful and highly engaging.
+
+CRITICAL CAPABILITIES:
+1. Exercise Suggestions & Brainstorming:
+   - If the user asks for exercise suggestions or brainstorming, first call 'get_categories' to see the categories they already have.
+   - Tailor your suggestions to match the existing categories in their database, or suggest new categories if they want to brainstorm.
+   - When suggesting new exercises, you can directly propose adding them using the 'add_exercise' tool.
+   - If you want to suggest a new category, use 'add_category' to propose it.
+   - You can propose both in tandem (e.g., first propose 'add_category', then when they accept/ask, add exercises under it).
+
+2. Enrichment of Exercises (Descriptions & Links):
+   - When calling 'add_exercise', ALWAYS provide a helpful 'description' (proper form, target muscles, step-by-step tips) and an educational/instructional 'link' (e.g., a YouTube tutorial, a reputable fitness directory link, or reference article) to enrich the exercise, not just a name.
+   - Explain why this exercise is beneficial for their fitness goals in your response.
+
+3. Workout History & Analytics:
+   - When the user asks about their progress, history, stats, or workouts, call 'get_sessions' to get authentic database records.
+   - Give highly accurate summaries. Do not make up session numbers or exercises that aren't in the returned data.
+
+Be encouraging, professional, and structured. Do not mention technical terms like "database", "function call", "JSON", or "tool" in your chat responses.`,
               },
             ],
           },
@@ -166,12 +335,14 @@ export default function AssistantScreen() {
                 },
                 {
                   name: 'add_exercise',
-                  description: 'Propose adding a new exercise. IMPORTANT: The user will be asked to confirm this. Do not assume it is added until they confirm.',
+                  description: 'Propose adding a new exercise with an optional description and instructional or reference link. IMPORTANT: The user will be asked to confirm this. Do not assume it is added until they confirm.',
                   parameters: {
                     type: 'OBJECT',
                     properties: {
-                      name: { type: 'STRING', description: 'Name of the exercise' },
-                      category_id: { type: 'INTEGER', description: 'ID of the category (must use existing category ID)' },
+                      name: { type: 'STRING', description: 'Name of the exercise (e.g., "Barbell Bench Press")' },
+                      category_id: { type: 'INTEGER', description: 'ID of the category (must use an existing category ID)' },
+                      description: { type: 'STRING', description: 'Optional explanation of form, muscle target, or how to execute it.' },
+                      link: { type: 'STRING', description: 'Optional instructional video URL or reference link (e.g., YouTube link).' },
                     },
                     required: ['name', 'category_id'],
                   },
@@ -348,8 +519,8 @@ export default function AssistantScreen() {
 
     try {
       if (action.name === 'add_exercise') {
-        const { name, category_id } = action.args;
-        await addExercise(name, category_id, null);
+        const { name, category_id, description, link } = action.args;
+        await addExercise(name, category_id, description || null, link || null);
         success = true;
       } else if (action.name === 'add_category') {
         const { name } = action.args;
@@ -441,6 +612,8 @@ export default function AssistantScreen() {
     }
 
     const isUser = item.role === 'user';
+    const messageText = item.text?.startsWith('[System] ') ? item.text.substring(9) : (item.text || '');
+
     return (
       <View className={`flex-row ${isUser ? 'justify-end' : 'justify-start'} my-2.5 px-1`}>
         <View
@@ -450,13 +623,9 @@ export default function AssistantScreen() {
               : 'bg-surface-light border border-borderColor-dark/25 rounded-tl-none'
           }`}
         >
-          <Text
-            className={`text-base leading-6 font-sans ${
-              isUser ? 'text-white' : 'text-text-primary-dark'
-            }`}
-          >
-            {item.text?.startsWith('[System] ') ? item.text.substring(9) : item.text}
-          </Text>
+          <Markdown style={isUser ? userMarkdownStyles : markdownStyles}>
+            {messageText}
+          </Markdown>
         </View>
       </View>
     );
@@ -501,14 +670,13 @@ export default function AssistantScreen() {
     );
   }
 
-  return (
-    <View style={{ paddingTop: insets.top }} className="flex-1 bg-[#050510]">
+  const bottomInset = insets.bottom > 0 ? (insets.bottom + 8) : 18;
+  const tabBarHeight = Platform.OS === 'ios' ? (64 + bottomInset) : (62 + bottomInset);
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-        className="flex-1 bg-[#050510]"
-      >
+
+
+  const chatContent = (
+    <>
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -516,6 +684,7 @@ export default function AssistantScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 20, paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         ListFooterComponent={
           <>
             {/* Show pending action proposal card */}
@@ -546,12 +715,26 @@ export default function AssistantScreen() {
                         <Text className="text-amber-200/50 text-sm font-semibold uppercase">Exercise Name</Text>
                         <Text className="text-amber-100 font-medium text-sm">{pendingAction.args.name}</Text>
                       </View>
-                      <View className="flex-row justify-between py-1">
+                      <View className={`flex-row justify-between py-1 ${pendingAction.args.description || pendingAction.args.link ? 'border-b border-amber-500/5' : ''}`}>
                         <Text className="text-amber-200/50 text-sm font-semibold uppercase">Category</Text>
                         <Text className="text-amber-100 font-medium text-sm">
                           {categories[pendingAction.args.category_id] || `ID: ${pendingAction.args.category_id}`}
                         </Text>
                       </View>
+                      {pendingAction.args.description && (
+                        <View className={`flex-col py-1 gap-1 ${pendingAction.args.link ? 'border-b border-amber-500/5' : ''}`}>
+                          <Text className="text-amber-200/50 text-xs font-semibold uppercase">Description</Text>
+                          <Text className="text-amber-100 text-sm leading-5">{pendingAction.args.description}</Text>
+                        </View>
+                      )}
+                      {pendingAction.args.link && (
+                        <View className="flex-col py-1 gap-1">
+                          <Text className="text-amber-200/50 text-xs font-semibold uppercase">Reference Link</Text>
+                          <Text className="text-brand-400 font-medium text-sm underline" numberOfLines={1}>
+                            {pendingAction.args.link}
+                          </Text>
+                        </View>
+                      )}
                     </>
                   )}
                 </View>
@@ -587,7 +770,7 @@ export default function AssistantScreen() {
             {isAiResponding && !pendingAction && (
               <View className="flex-row justify-start my-2.5 px-1">
                 <View className="bg-surface-light border border-borderColor-dark/25 px-5 py-3.5 rounded-3xl rounded-tl-none flex-row items-center gap-2">
-                  <Loader2 className="animate-spin" color="#8b5cf6" size={20} />
+                  <SpinningLoader color="#8b5cf6" size={18} />
                   <Text className="text-text-secondary-dark text-sm font-medium">Coach is thinking...</Text>
                 </View>
               </View>
@@ -597,42 +780,73 @@ export default function AssistantScreen() {
       />
 
       {/* Input bar */}
-      <View className="p-5 border-t border-borderColor-dark/30 bg-surface-dark/40 backdrop-blur-md">
-        <View className="flex-row gap-3.5 items-center">
-          <TextInput
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="Ask your coach or add an exercise..."
-            placeholderTextColor="#475569"
-            editable={!isAiResponding && !pendingAction}
-            className="flex-1 bg-surface-dark border border-borderColor-dark/50 rounded-3xl px-5 py-3.5 text-text-primary-dark text-base max-h-24"
-            multiline={true}
-          />
-          {isAiResponding || !!pendingAction || !inputText.trim() ? (
-            <TouchableOpacity
-              disabled={true}
-              className="w-12 h-12 rounded-2xl items-center justify-center bg-borderColor-dark/35 opacity-40"
-            >
-              <Send color="#ffffff" size={20} />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={() => handleSendMessage()}
-              className="shadow-md shadow-brand-500/10"
-            >
+      <View className="p-5 border-t border-borderColor-dark/30 bg-[#0a0a1e]">
+        <View className="flex-row gap-3.5 items-center w-full">
+          <View className="flex-1">
+            <TextInput
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Ask your coach or add an exercise..."
+              placeholderTextColor="#475569"
+              editable={!isAiResponding && !pendingAction}
+              className="w-full bg-surface-dark border border-borderColor-dark/50 rounded-3xl px-5 py-3.5 text-text-primary-dark text-base max-h-24"
+              multiline={true}
+            />
+          </View>
+          <TouchableOpacity
+            onPress={() => handleSendMessage()}
+            disabled={isAiResponding || !!pendingAction || !inputText.trim()}
+            activeOpacity={0.7}
+            style={{ width: 48, height: 48, borderRadius: 16, overflow: 'hidden' }}
+          >
+            {isAiResponding || !!pendingAction || !inputText.trim() ? (
+              <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: 'rgba(26,26,56,0.6)', borderWidth: 1, borderColor: 'rgba(42,42,74,0.6)', alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}>
+                <Send color="#64648a" size={20} />
+              </View>
+            ) : (
               <LinearGradient
                 colors={['#8b5cf6', '#06b6d4']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                className="w-12 h-12 rounded-2xl items-center justify-center"
+                style={{ width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}
               >
                 <Send color="#ffffff" size={20} />
               </LinearGradient>
-            </TouchableOpacity>
-          )}
+            )}
+          </TouchableOpacity>
         </View>
       </View>
-     </KeyboardAvoidingView>
+    </>
+  );
+
+  // iOS: use KeyboardAvoidingView with padding
+  // Android: use manual bottom padding from keyboard event listener
+  if (Platform.OS === 'ios') {
+    return (
+      <View style={{ paddingTop: insets.top }} className="flex-1 bg-[#050510]">
+        <KeyboardAvoidingView
+          behavior="padding"
+          keyboardVerticalOffset={tabBarHeight}
+          className="flex-1"
+        >
+          {chatContent}
+        </KeyboardAvoidingView>
+      </View>
+    );
+  }
+
+  // Android
+  return (
+    <View
+      style={{
+        flex: 1,
+        paddingTop: insets.top,
+        paddingBottom: keyboardHeight > 0 ? keyboardHeight - tabBarHeight : 0,
+        backgroundColor: '#050510',
+      }}
+    >
+      {chatContent}
     </View>
   );
 }
+

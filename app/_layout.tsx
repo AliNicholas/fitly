@@ -6,6 +6,13 @@ import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Text } from 'react-native';
 import { initDb } from '../db/database';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+
+// Suppress strict-mode warnings from react-navigation internals reading shared values during render
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false,
+});
 
 export {
   ErrorBoundary,

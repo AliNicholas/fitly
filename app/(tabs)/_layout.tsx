@@ -79,6 +79,7 @@ export default function TabLayout() {
           marginTop: 4,
         },
         tabBarButton: (props) => <AnimatedTabBarButton {...props} />,
+        tabBarHideOnKeyboard: true,
       }}>
       <Tabs.Screen
         name="index"

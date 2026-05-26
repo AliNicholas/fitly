@@ -42,21 +42,21 @@ export function BottomSheetModal({ visible, onClose, title, children }: BottomSh
         />
 
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="w-full max-h-[90%] bg-surface-dark border-t border-borderColor-dark rounded-t-3xl shadow-2xl"
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          className="w-full max-h-[90%] bg-surface-dark border-t border-[#2a2a4a] rounded-t-3xl shadow-2xl flex-col"
         >
-          <View style={{ paddingBottom: Math.max(insets.bottom, 20) }} className="w-full">
+          <View style={{ paddingBottom: Math.max(insets.bottom, 28) }} className="w-full flex-1 flex-col">
             {/* Header / Drag indicator simulation */}
             <View className="items-center py-2">
-              <View className="w-14 h-1.5 bg-borderColor-dark/40 rounded-full" />
+              <View className="w-14 h-1.5 bg-[#2a2a4a]/40 rounded-full" />
             </View>
 
             {/* Header Content */}
-            <View className="flex-row items-center justify-between px-4 pb-3 border-b border-borderColor-dark/20">
+            <View className="flex-row items-center justify-between px-4 pb-3 border-b border-[#2a2a4a]/20">
               <Text className="text-text-primary-dark font-bold text-xl">{title}</Text>
               <TouchableOpacity
                 onPress={handleClose}
-                className="p-1 bg-surface-light-dark border border-borderColor-dark rounded-full"
+                className="p-1 bg-surface-light-dark border border-[#2a2a4a] rounded-full"
               >
                 <X color="#94a3b8" size={20} />
               </TouchableOpacity>
@@ -64,9 +64,10 @@ export function BottomSheetModal({ visible, onClose, title, children }: BottomSh
 
             {/* Scrollable Form Body */}
             <ScrollView
-              className="px-5 py-4"
+              className="px-5 py-4 flex-1"
               contentContainerStyle={{ paddingBottom: 48 }}
               keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
             >
               {children}
             </ScrollView>
@@ -76,3 +77,4 @@ export function BottomSheetModal({ visible, onClose, title, children }: BottomSh
     </Modal>
   );
 }
+
