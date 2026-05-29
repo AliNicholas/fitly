@@ -45,7 +45,7 @@ export function BottomSheetModal({ visible, onClose, title, children }: BottomSh
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           className="w-full max-h-[90%] bg-surface-dark border-t border-[#2a2a4a] rounded-t-3xl shadow-2xl flex-col"
         >
-          <View style={{ paddingBottom: Math.max(insets.bottom, 28) }} className="w-full flex-1 flex-col">
+          <View style={{ paddingBottom: Math.max(insets.bottom, 28) }} className="w-full flex-auto flex-col">
             {/* Header / Drag indicator simulation */}
             <View className="items-center py-2">
               <View className="w-14 h-1.5 bg-[#2a2a4a]/40 rounded-full" />
@@ -64,7 +64,7 @@ export function BottomSheetModal({ visible, onClose, title, children }: BottomSh
 
             {/* Scrollable Form Body */}
             <ScrollView
-              className="px-5 py-4 flex-1"
+              className="px-5 py-4 flex-auto"
               contentContainerStyle={{ paddingBottom: 48 }}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}

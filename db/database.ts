@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 
@@ -7,6 +8,19 @@ export async function getDb(): Promise<SQLite.SQLiteDatabase> {
     dbInstance = await SQLite.openDatabaseAsync('fitly.db');
   }
   return dbInstance;
+}
+
+export async function runWriteTransaction(
+  task: (tx: SQLite.SQLiteDatabase) => Promise<void>
+): Promise<void> {
+  const db = await getDb();
+
+  if (Platform.OS === 'web') {
+    await db.withTransactionAsync(() => task(db));
+    return;
+  }
+
+  await db.withExclusiveTransactionAsync(task);
 }
 
 export async function initDb() {
@@ -55,13 +69,10 @@ export async function initDb() {
     );
   `);
 
-  // Migrate existing tables
-  try {
-    await db.execAsync('ALTER TABLE session_exercises ADD COLUMN is_time INTEGER DEFAULT 0;');
-    console.log('Migrated: added is_time column successfully.');
-  } catch (e) {
-    // Column already exists, ignore
-  }
+  await ensureColumn(db, 'exercises', 'description', 'description TEXT');
+  await ensureColumn(db, 'exercises', 'link', 'link TEXT');
+  await ensureColumn(db, 'session_exercises', 'is_time', 'is_time INTEGER DEFAULT 0');
+  await ensureColumn(db, 'session_exercises', 'order', '"order" INTEGER');
 
   // Seed default categories if none exist
   try {
@@ -71,9 +82,21 @@ export async function initDb() {
         INSERT INTO categories (name) VALUES 
         ('Chest'), ('Back'), ('Legs'), ('Shoulders'), ('Arms'), ('Core'), ('Cardio');
       `);
-      console.log('Seeded default categories successfully.');
     }
   } catch (error) {
     console.error('Error seeding categories:', error);
+  }
+}
+
+async function ensureColumn(
+  db: SQLite.SQLiteDatabase,
+  tableName: string,
+  columnName: string,
+  columnDefinition: string
+): Promise<void> {
+  const columns = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${tableName})`);
+
+  if (!columns.some((column) => column.name === columnName)) {
+    await db.execAsync(`ALTER TABLE ${tableName} ADD COLUMN ${columnDefinition};`);
   }
 }

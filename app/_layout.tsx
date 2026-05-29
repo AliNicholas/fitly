@@ -1,12 +1,13 @@
 import '../global.css';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
-import { DarkTheme, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Text } from 'react-native';
 import { initDb } from '../db/database';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+import { CustomDialogProvider } from '../components/CustomDialog';
 
 // Suppress strict-mode warnings from react-navigation internals reading shared values during render
 configureReanimatedLogger({
@@ -22,9 +23,7 @@ export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
 
-SplashScreen.preventAutoHideAsync();
-
-import { CustomDialogProvider } from '../components/CustomDialog';
+void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [dbLoaded, setDbLoaded] = useState(false);

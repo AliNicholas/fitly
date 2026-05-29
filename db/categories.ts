@@ -1,4 +1,4 @@
-import { getDb } from './database';
+import { getDb, runWriteTransaction } from './database';
 
 export interface Category {
   id: number;
@@ -57,11 +57,15 @@ export async function deleteCategory(id: number, force: boolean = false): Promis
         message: `This category has ${exerciseCount} exercise(s). Deleting it will also remove those exercises.`
       };
     }
-    // Force delete: remove exercises first (handled by ON DELETE CASCADE, but we make it explicit if needed)
-    // The web app did an explicit delete, although SQLite's ON DELETE CASCADE will handle it too.
-    await db.runAsync('DELETE FROM exercises WHERE category_id = ?', [id]);
+    await runWriteTransaction(async (tx) => {
+      await tx.runAsync('DELETE FROM exercises WHERE category_id = ?', [id]);
+      await tx.runAsync('DELETE FROM categories WHERE id = ?', [id]);
+    });
+    return { success: true };
   }
 
-  await db.runAsync('DELETE FROM categories WHERE id = ?', [id]);
+  await runWriteTransaction(async (tx) => {
+    await tx.runAsync('DELETE FROM categories WHERE id = ?', [id]);
+  });
   return { success: true };
 }

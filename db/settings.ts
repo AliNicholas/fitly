@@ -1,4 +1,4 @@
-import { getDb } from './database';
+import { getDb, runWriteTransaction } from './database';
 
 export async function getSettings(): Promise<Record<string, string>> {
   const db = await getDb();
@@ -19,11 +19,10 @@ export async function saveSetting(key: string, value: string): Promise<void> {
 }
 
 export async function saveSettings(settings: Record<string, string>): Promise<void> {
-  const db = await getDb();
-  await db.withTransactionAsync(async () => {
+  await runWriteTransaction(async (tx) => {
     for (const [key, value] of Object.entries(settings)) {
       if (typeof value === 'string') {
-        await db.runAsync(
+        await tx.runAsync(
           'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?',
           [key, value, value]
         );

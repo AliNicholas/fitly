@@ -7,15 +7,13 @@ import {
   TextInput,
   ActivityIndicator,
   Linking,
-  Modal,
-  FlatList,
   LayoutAnimation,
   UIManager,
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
-import { Plus, Edit2, Trash2, ExternalLink, Dumbbell, FolderClosed, ChevronDown, X } from 'lucide-react-native';
+import { Plus, Edit2, Trash2, ExternalLink, Dumbbell, FolderClosed, ChevronDown } from 'lucide-react-native';
 import { getExercises, addExercise, updateExercise, deleteExercise, Exercise } from '../../db/exercises';
 import { getCategories, addCategory, updateCategory, deleteCategory, Category } from '../../db/categories';
 import { BottomSheetModal } from '../../components/BottomSheetModal';

@@ -1,4 +1,4 @@
-import { getDb } from './database';
+import { getDb, runWriteTransaction } from './database';
 
 export interface SessionExercise {
   id?: number;
@@ -56,11 +56,10 @@ export async function addSession(
     throw new Error('Date is required');
   }
 
-  const db = await getDb();
   let insertedSessionId = 0;
 
-  await db.withTransactionAsync(async () => {
-    const sessionResult = await db.runAsync(
+  await runWriteTransaction(async (tx) => {
+    const sessionResult = await tx.runAsync(
       'INSERT INTO sessions (date, notes) VALUES (?, ?)',
       [date, notes || null]
     );
@@ -69,15 +68,15 @@ export async function addSession(
     if (exercises && Array.isArray(exercises)) {
       for (let i = 0; i < exercises.length; i++) {
         const ex = exercises[i];
-        await db.runAsync(
+        await tx.runAsync(
           'INSERT INTO session_exercises (session_id, exercise_id, sets, reps, weight, is_time, "order") VALUES (?, ?, ?, ?, ?, ?, ?)',
           [
             insertedSessionId,
             ex.exercise_id,
-            ex.sets || null,
-            ex.reps || null,
-            ex.weight !== null && ex.weight !== undefined && String(ex.weight) !== '' ? parseFloat(ex.weight.toString()) : null,
-            ex.is_time || 0,
+            ex.sets ?? null,
+            ex.reps ?? null,
+            normalizeWeight(ex.weight),
+            ex.is_time ?? 0,
             i
           ]
         );
@@ -98,26 +97,24 @@ export async function updateSession(
     throw new Error('id and date are required');
   }
 
-  const db = await getDb();
-
-  await db.withTransactionAsync(async () => {
-    await db.runAsync('UPDATE sessions SET date = ?, notes = ? WHERE id = ?', [date, notes || null, id]);
+  await runWriteTransaction(async (tx) => {
+    await tx.runAsync('UPDATE sessions SET date = ?, notes = ? WHERE id = ?', [date, notes || null, id]);
     
     // Delete old exercises and re-insert
-    await db.runAsync('DELETE FROM session_exercises WHERE session_id = ?', [id]);
+    await tx.runAsync('DELETE FROM session_exercises WHERE session_id = ?', [id]);
     
     if (exercises && Array.isArray(exercises)) {
       for (let i = 0; i < exercises.length; i++) {
         const ex = exercises[i];
-        await db.runAsync(
+        await tx.runAsync(
           'INSERT INTO session_exercises (session_id, exercise_id, sets, reps, weight, is_time, "order") VALUES (?, ?, ?, ?, ?, ?, ?)',
           [
             id,
             ex.exercise_id,
-            ex.sets || null,
-            ex.reps || null,
-            ex.weight !== null && ex.weight !== undefined && String(ex.weight) !== '' ? parseFloat(ex.weight.toString()) : null,
-            ex.is_time || 0,
+            ex.sets ?? null,
+            ex.reps ?? null,
+            normalizeWeight(ex.weight),
+            ex.is_time ?? 0,
             i
           ]
         );
@@ -127,9 +124,16 @@ export async function updateSession(
 }
 
 export async function deleteSession(id: number): Promise<void> {
-  const db = await getDb();
-  await db.withTransactionAsync(async () => {
-    await db.runAsync('DELETE FROM session_exercises WHERE session_id = ?', [id]);
-    await db.runAsync('DELETE FROM sessions WHERE id = ?', [id]);
+  await runWriteTransaction(async (tx) => {
+    await tx.runAsync('DELETE FROM session_exercises WHERE session_id = ?', [id]);
+    await tx.runAsync('DELETE FROM sessions WHERE id = ?', [id]);
   });
+}
+
+function normalizeWeight(weight: number | null | undefined): number | null {
+  if (weight === null || weight === undefined) {
+    return null;
+  }
+
+  return Number.isFinite(weight) ? weight : null;
 }

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Trash2, ChevronDown } from 'lucide-react-native';
 import { Exercise } from '../db/exercises';
 import * as Haptics from 'expo-haptics';
@@ -14,7 +13,7 @@ interface ExerciseRowProps {
   weight: string;
   isBodyweight: boolean;
   isTime: boolean;
-  onUpdate: (field: string, value: any) => void;
+  onUpdate: (field: string | Record<string, any>, value?: any) => void;
   onRemove: () => void;
 }
 
@@ -30,7 +29,6 @@ export function ExerciseRow({
   onUpdate,
   onRemove,
 }: ExerciseRowProps) {
-  const insets = useSafeAreaInsets();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const selectedExercise = availableExercises.find(ex => ex.id === selectedExerciseId);
@@ -122,7 +120,7 @@ export function ExerciseRow({
 
           {/* Reps / Seconds */}
           <View className="flex-1 gap-1.5 flex-col">
-            <View className="flex-row justify-between items-center h-5 mb-0.5">
+            <View className="flex-row justify-between items-center mb-1.5">
               <Text className="text-xs font-semibold text-text-secondary-dark uppercase tracking-wider">
                 {isTime ? 'Secs' : 'Reps'}
               </Text>
@@ -185,9 +183,11 @@ export function ExerciseRow({
             <TouchableOpacity
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                onUpdate('isBodyweight', !isBodyweight);
-                if (!isBodyweight) {
-                  onUpdate('weight', ''); // clear input when toggling bodyweight on
+                const nextIsBodyweight = !isBodyweight;
+                if (nextIsBodyweight) {
+                  onUpdate({ isBodyweight: true, weight: '' });
+                } else {
+                  onUpdate('isBodyweight', false);
                 }
               }}
               activeOpacity={0.7}
@@ -207,4 +207,3 @@ export function ExerciseRow({
     </View>
   );
 }
-

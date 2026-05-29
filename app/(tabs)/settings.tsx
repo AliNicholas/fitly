@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
-import { Settings, Key, Save, Check, Eye, EyeOff } from 'lucide-react-native';
+import { Key, Save, Check, Eye, EyeOff } from 'lucide-react-native';
 import { getSettings, saveSettings } from '../../db/settings';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -13,7 +13,6 @@ export default function SettingsScreen() {
   const { showDialog } = useCustomDialog();
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
-  const [provider, setProvider] = useState('gemini');
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [savedStatus, setSavedStatus] = useState(false);
@@ -22,7 +21,6 @@ export default function SettingsScreen() {
     try {
       const data = await getSettings();
       setApiKey(data.gemini_api_key || '');
-      setProvider(data.api_provider || 'gemini');
       setLoading(false);
     } catch (e) {
       console.error('Failed to load settings:', e);
@@ -42,7 +40,7 @@ export default function SettingsScreen() {
     try {
       await saveSettings({
         gemini_api_key: apiKey,
-        api_provider: provider
+        api_provider: 'gemini'
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setSavedStatus(true);

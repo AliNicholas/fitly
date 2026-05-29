@@ -9,15 +9,15 @@ import {
   Platform,
   FlatList,
   Keyboard,
-  ScrollView,
   LayoutAnimation,
   UIManager,
   Animated,
   Easing,
 } from 'react-native';
+import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { MessageSquare, Send, Loader2, Check, X, AlertTriangle, Key } from 'lucide-react-native';
+import { Send, Loader2, Check, X, AlertTriangle, Key } from 'lucide-react-native';
 import { getSettings } from '../../db/settings';
 import { getSessions } from '../../db/sessions';
 import { getCategories, addCategory } from '../../db/categories';
@@ -57,8 +57,10 @@ const SpinningLoader = ({ color = '#8b5cf6', size = 20 }: { color?: string; size
   );
 };
 
+type MarkdownStyle = TextStyle | ViewStyle | ImageStyle;
+
 // Markdown styling for model messages
-const markdownStyles = {
+const markdownStyles: Record<string, MarkdownStyle> = {
   body: {
     color: '#ffffff',
     fontSize: 16,
@@ -141,17 +143,19 @@ const markdownStyles = {
 };
 
 // Markdown styling for user messages
-const userMarkdownStyles = {
+const userMarkdownStyles: Record<string, MarkdownStyle> = {
   ...markdownStyles,
   body: {
-    ...markdownStyles.body,
+    ...(markdownStyles.body as TextStyle),
     color: '#ffffff',
   },
   strong: {
+    ...(markdownStyles.strong as TextStyle),
     fontWeight: 'bold',
     color: '#ffffff',
   },
   link: {
+    ...(markdownStyles.link as TextStyle),
     color: '#ffffff',
     textDecorationLine: 'underline',
   },
@@ -849,4 +853,3 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
     </View>
   );
 }
-

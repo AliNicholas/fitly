@@ -25,6 +25,38 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+function parseDateKey(dateKey: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
+
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  date.setHours(0, 0, 0, 0);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+function getPickerMonthDate(dateKey?: string): Date {
+  const date = dateKey ? parseDateKey(dateKey) : null;
+  const pickerMonth = date ?? new Date();
+  pickerMonth.setDate(1);
+  pickerMonth.setHours(0, 0, 0, 0);
+  return pickerMonth;
+}
+
 export default function SessionsScreen() {
   const insets = useSafeAreaInsets();
   const { showDialog } = useCustomDialog();
@@ -41,11 +73,7 @@ export default function SessionsScreen() {
     { exercise_id: number; sets: string; reps: string; weight: string; isBodyweight: boolean; isTime: boolean }[]
   >([]);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const [pickerDate, setPickerDate] = useState(() => {
-    const d = new Date();
-    d.setDate(1);
-    return d;
-  });
+  const [pickerDate, setPickerDate] = useState(() => getPickerMonthDate());
 
   const loadData = useCallback(async () => {
     try {
@@ -87,11 +115,7 @@ export default function SessionsScreen() {
     setEditingSession(null);
     const initialDate = getTodayDateString();
     setSessionDate(initialDate);
-    
-    // Sync picker date
-    const d = new Date(initialDate);
-    d.setDate(1);
-    setPickerDate(d);
+    setPickerDate(getPickerMonthDate(initialDate));
     setDatePickerOpen(false);
 
     setSessionNotes('');
@@ -105,11 +129,7 @@ export default function SessionsScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEditingSession(sess);
     setSessionDate(sess.date);
-    
-    // Sync picker date
-    const d = new Date(sess.date);
-    d.setDate(1);
-    setPickerDate(d);
+    setPickerDate(getPickerMonthDate(sess.date));
     setDatePickerOpen(false);
 
     setSessionNotes(sess.notes || '');
@@ -152,22 +172,30 @@ export default function SessionsScreen() {
     setSessionExercises(updated);
   };
 
-  const handleUpdateExerciseRow = (index: number, field: string, value: any) => {
-    const updated = [...sessionExercises];
-    updated[index] = {
-      ...updated[index],
-      [field]: value,
-    };
-    setSessionExercises(updated);
+  const handleUpdateExerciseRow = (index: number, field: string | Record<string, any>, value?: any) => {
+    setSessionExercises((prev) => {
+      const updated = [...prev];
+      if (typeof field === 'string') {
+        updated[index] = {
+          ...updated[index],
+          [field]: value,
+        };
+      } else {
+        updated[index] = {
+          ...updated[index],
+          ...field,
+        };
+      }
+      return updated;
+    });
   };
 
   const handleSaveSession = async () => {
     // Validate date format YYYY-MM-DD
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!sessionDate.trim() || !dateRegex.test(sessionDate.trim())) {
+    if (!parseDateKey(sessionDate.trim())) {
       showDialog({
         title: 'Required',
-        message: 'Please enter a date in YYYY-MM-DD format.'
+        message: 'Please enter a valid date in YYYY-MM-DD format.'
       });
       return;
     }
@@ -245,14 +273,12 @@ export default function SessionsScreen() {
   };
 
   const formatDateLabel = (dateStr: string) => {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      const year = parts[0];
-      const month = parseInt(parts[1], 10) - 1;
-      const day = parts[2];
-      const date = new Date(parseInt(year, 10), month, parseInt(day, 10));
+    const date = parseDateKey(dateStr);
+
+    if (date) {
       return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     }
+
     return dateStr;
   };
 
