@@ -5,14 +5,12 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
   FlatList,
   Keyboard,
-  LayoutAnimation,
-  UIManager,
   Animated,
   Easing,
+  useWindowDimensions,
 } from 'react-native';
 import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,10 +20,7 @@ import { getSettings } from '../../db/settings';
 import { getSessions } from '../../db/sessions';
 import { getCategories, addCategory } from '../../db/categories';
 import { addExercise } from '../../db/exercises';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental && !((global as any)?.FabricUIManager)) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+import { getStableTutorialLink } from '../../utils/tutorialLinks';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Markdown from 'react-native-markdown-display';
@@ -198,27 +193,35 @@ export default function AssistantScreen() {
   const [isAiResponding, setIsAiResponding] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ name: string; args: any } | null>(null);
   const [categories, setCategories] = useState<CategoryMap>({});
+  const [composerHeight, setComposerHeight] = useState(88);
+  const [keyboardBottomOffset, setKeyboardBottomOffset] = useState(0);
 
   const flatListRef = useRef<FlatList>(null);
-
-  // Android keyboard height tracking - must be declared here (before early returns) to satisfy Rules of Hooks
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const { height: windowHeight } = useWindowDimensions();
 
   useEffect(() => {
-    if (Platform.OS !== 'android') return;
+    const handleKeyboardShow = (event: { endCoordinates: { screenY: number } }) => {
+      setKeyboardBottomOffset(Math.max(windowHeight - event.endCoordinates.screenY, 0));
+    };
 
-    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-    });
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardHeight(0);
-    });
+    const handleKeyboardHide = () => {
+      setKeyboardBottomOffset(0);
+    };
+
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillChangeFrame' : 'keyboardDidShow',
+      handleKeyboardShow
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      handleKeyboardHide
+    );
 
     return () => {
       showSub.remove();
       hideSub.remove();
     };
-  }, []);
+  }, [windowHeight]);
 
   // Fetch settings & category mapping on focus
   const loadConfig = useCallback(async () => {
@@ -318,7 +321,8 @@ CRITICAL CAPABILITIES:
    - You can propose both in tandem (e.g., first propose 'add_category', then when they accept/ask, add exercises under it).
 
 2. Enrichment of Exercises (Descriptions & Links):
-   - When calling 'add_exercise', ALWAYS provide a helpful 'description' (proper form, target muscles, step-by-step tips) and an educational/instructional 'link' (e.g., a YouTube tutorial, a reputable fitness directory link, or reference article) to enrich the exercise, not just a name.
+   - When calling 'add_exercise', ALWAYS provide a helpful 'description' (proper form, target muscles, step-by-step tips) and an educational/instructional 'link' to enrich the exercise, not just a name.
+   - Do not use direct individual YouTube video URLs because videos may be deleted or unavailable. Prefer stable tutorial/search/reference URLs such as a YouTube results search for the exercise name or a reputable fitness directory page.
    - Explain why this exercise is beneficial for their fitness goals in your response.
 
 3. Workout History & Analytics:
@@ -402,7 +406,6 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
     };
 
     let updatedHistory = overrideHistory ? [...overrideHistory, userMsg] : [...messages, userMsg];
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setMessages(updatedHistory);
     setIsAiResponding(true);
 
@@ -439,7 +442,6 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
               : undefined,
           };
           updatedHistory = [...updatedHistory, modelMsg];
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           setMessages(updatedHistory);
         }
 
@@ -458,7 +460,6 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
               },
             };
             updatedHistory = [...updatedHistory, toolResponseMsg];
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setMessages(updatedHistory);
             // Continue the loop to let Gemini process the sessions database
           } else if (call.name === 'get_categories') {
@@ -472,13 +473,11 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
               },
             };
             updatedHistory = [...updatedHistory, toolResponseMsg];
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setMessages(updatedHistory);
             // Continue the loop to let Gemini process the categories database
           } else {
             // It is a WRITE call (add_exercise or add_category)
             // Halt the automatic loop, return the pending action card to user
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setPendingAction({
               name: call.name,
               args: call.args,
@@ -493,7 +492,6 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
     } catch (err: any) {
       console.error(err);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setMessages((prev) => [
         ...prev,
         {
@@ -503,7 +501,6 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
         },
       ]);
     } finally {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setIsAiResponding(false);
     }
   };
@@ -515,7 +512,6 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
     setIsAiResponding(true);
 
     const action = pendingAction;
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setPendingAction(null);
 
     let success = false;
@@ -524,7 +520,7 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
     try {
       if (action.name === 'add_exercise') {
         const { name, category_id, description, link } = action.args;
-        await addExercise(name, category_id, description || null, link || null);
+        await addExercise(name, category_id, description || null, getStableTutorialLink(name, link));
         success = true;
       } else if (action.name === 'add_category') {
         const { name } = action.args;
@@ -548,7 +544,6 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
     };
 
     const newMsgs = [...messages, systemResponseMsg];
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setMessages(newMsgs);
 
     if (success) {
@@ -569,7 +564,6 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const action = pendingAction;
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setPendingAction(null);
 
     // Send cancel tool response
@@ -583,7 +577,6 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
     };
 
     const newMsgs = [...messages, systemResponseMsg];
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setMessages(newMsgs);
 
     await handleSendMessage(
@@ -674,18 +667,14 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
     );
   }
 
-  const bottomInset = insets.bottom > 0 ? (insets.bottom + 8) : 18;
-  const tabBarHeight = Platform.OS === 'ios' ? (64 + bottomInset) : (62 + bottomInset);
-
-
-
   const chatContent = (
-    <>
+    <View className="flex-1">
       <FlatList
         ref={flatListRef}
         data={messages}
         renderItem={renderMessageItem}
         keyExtractor={(item) => item.id}
+        style={{ flex: 1, marginBottom: composerHeight + keyboardBottomOffset }}
         contentContainerStyle={{ padding: 20, paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -784,7 +773,11 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
       />
 
       {/* Input bar */}
-      <View className="p-5 border-t border-borderColor-dark/30 bg-[#0a0a1e]">
+      <View
+        onLayout={(event) => setComposerHeight(event.nativeEvent.layout.height)}
+        style={{ bottom: keyboardBottomOffset }}
+        className="absolute left-0 right-0 p-5 border-t border-borderColor-dark/30 bg-[#0a0a1e]"
+      >
         <View className="flex-row gap-3.5 items-center w-full">
           <View className="flex-1">
             <TextInput
@@ -820,35 +813,11 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
           </TouchableOpacity>
         </View>
       </View>
-    </>
+    </View>
   );
 
-  // iOS: use KeyboardAvoidingView with padding
-  // Android: use manual bottom padding from keyboard event listener
-  if (Platform.OS === 'ios') {
-    return (
-      <View style={{ paddingTop: insets.top }} className="flex-1 bg-[#050510]">
-        <KeyboardAvoidingView
-          behavior="padding"
-          keyboardVerticalOffset={tabBarHeight}
-          className="flex-1"
-        >
-          {chatContent}
-        </KeyboardAvoidingView>
-      </View>
-    );
-  }
-
-  // Android
   return (
-    <View
-      style={{
-        flex: 1,
-        paddingTop: insets.top,
-        paddingBottom: keyboardHeight > 0 ? keyboardHeight - tabBarHeight : 0,
-        backgroundColor: '#050510',
-      }}
-    >
+    <View style={{ paddingTop: insets.top }} className="flex-1 bg-[#050510]">
       {chatContent}
     </View>
   );

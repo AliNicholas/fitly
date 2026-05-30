@@ -7,9 +7,6 @@ import {
   TextInput,
   ActivityIndicator,
   Linking,
-  LayoutAnimation,
-  UIManager,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
@@ -20,10 +17,7 @@ import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useCustomDialog } from '../../components/CustomDialog';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental && !((global as any)?.FabricUIManager)) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+import { getStableTutorialLink } from '../../utils/tutorialLinks';
 
 export default function ExercisesScreen() {
   const insets = useSafeAreaInsets();
@@ -51,7 +45,6 @@ export default function ExercisesScreen() {
     try {
       const exData = await getExercises();
       const catData = await getCategories();
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setExercises(exData);
       setCategories(catData);
       setLoading(false);
@@ -67,8 +60,11 @@ export default function ExercisesScreen() {
     }, [loadData])
   );
 
-  const handleOpenExerciseLink = async (url: string | null) => {
-    if (!url) return;
+  const handleOpenExerciseLink = async (exercise: Exercise) => {
+    if (!exercise.link) return;
+
+    const url = getStableTutorialLink(exercise.name, exercise.link);
+
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const supported = await Linking.canOpenURL(url);
@@ -271,7 +267,6 @@ export default function ExercisesScreen() {
         <TouchableOpacity
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setActiveTab('exercises');
           }}
           style={{
@@ -294,7 +289,6 @@ export default function ExercisesScreen() {
         <TouchableOpacity
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setActiveTab('categories');
           }}
           style={{
@@ -350,7 +344,7 @@ export default function ExercisesScreen() {
                             </Text>
                             {ex.link && (
                               <TouchableOpacity
-                                onPress={() => handleOpenExerciseLink(ex.link)}
+                                onPress={() => handleOpenExerciseLink(ex)}
                                 className="flex-row items-center gap-1 mt-2.5 bg-brand-900/10 border border-brand-500/10 self-start px-2.5 py-1 rounded-lg"
                               >
                                 <ExternalLink color="#a78bfa" size={14} />
@@ -485,7 +479,6 @@ export default function ExercisesScreen() {
             <TouchableOpacity
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                 setCategoryDropdownOpen(!categoryDropdownOpen);
               }}
               className="bg-surface-dark border border-borderColor-dark rounded-2xl flex-row items-center justify-between px-5 py-3.5"

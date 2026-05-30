@@ -6,9 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  LayoutAnimation,
-  UIManager,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
@@ -20,10 +17,6 @@ import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useCustomDialog } from '../../components/CustomDialog';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental && !((global as any)?.FabricUIManager)) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 function parseDateKey(dateKey: string): Date | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
@@ -79,7 +72,6 @@ export default function SessionsScreen() {
     try {
       const sessData = await getSessions();
       const exData = await getExercises();
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setSessions(sessData);
       setAvailableExercises(exData);
       setLoading(false);
@@ -150,7 +142,6 @@ export default function SessionsScreen() {
 
   const handleAddExerciseRow = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     setSessionExercises([
       ...sessionExercises,
       { exercise_id: availableExercises[0]?.id || 0, sets: '3', reps: '10', weight: '', isBodyweight: false, isTime: false },
@@ -166,7 +157,6 @@ export default function SessionsScreen() {
       });
       return;
     }
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     const updated = [...sessionExercises];
     updated.splice(index, 1);
     setSessionExercises(updated);
@@ -492,7 +482,6 @@ export default function SessionsScreen() {
             <TouchableOpacity
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                 setDatePickerOpen(!datePickerOpen);
               }}
               className="bg-surface-dark border border-borderColor-dark rounded-2xl flex-row items-center justify-between px-5 py-3.5"
