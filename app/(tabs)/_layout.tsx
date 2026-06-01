@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { Tabs } from 'expo-router';
 import { Platform, Pressable, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LayoutDashboard, Dumbbell, Calendar, MessageSquare, Settings } from 'lucide-react-native';
+import { LayoutDashboard, Dumbbell, Calendar, MessageSquare, Settings, Flame } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../../contexts/ThemeContext';
 
@@ -77,8 +77,9 @@ export default function TabLayout() {
         headerTitleAlign: 'center',
         tabBarLabelStyle: {
           fontFamily: 'Inter_500Medium',
-          fontSize: 12,
-          marginTop: 4,
+          fontSize: 9.5,
+          marginTop: 2,
+          letterSpacing: -0.2,
         },
         tabBarButton: (props) => <AnimatedTabBarButton {...props} />,
         tabBarHideOnKeyboard: true,
@@ -88,8 +89,8 @@ export default function TabLayout() {
         options={{
           title: 'Dashboard',
           tabBarLabel: 'Dashboard',
-          tabBarIcon: ({ color, size }) => (
-            <LayoutDashboard color={color} size={size} />
+          tabBarIcon: ({ color }) => (
+            <LayoutDashboard color={color} size={19} />
           ),
         }}
       />
@@ -98,8 +99,8 @@ export default function TabLayout() {
         options={{
           title: 'Exercise Library',
           tabBarLabel: 'Exercises',
-          tabBarIcon: ({ color, size }) => (
-            <Dumbbell color={color} size={size} />
+          tabBarIcon: ({ color }) => (
+            <Dumbbell color={color} size={19} />
           ),
         }}
       />
@@ -108,8 +109,8 @@ export default function TabLayout() {
         options={{
           title: 'Workout Log',
           tabBarLabel: 'Sessions',
-          tabBarIcon: ({ color, size }) => (
-            <Calendar color={color} size={size} />
+          tabBarIcon: ({ color }) => (
+            <Calendar color={color} size={19} />
           ),
         }}
       />
@@ -117,9 +118,19 @@ export default function TabLayout() {
         name="assistant"
         options={{
           title: 'Fitly AI Coach',
-          tabBarLabel: 'AI Assistant',
-          tabBarIcon: ({ color, size }) => (
-            <MessageSquare color={color} size={size} />
+          tabBarLabel: 'Coach',
+          tabBarIcon: ({ color }) => (
+            <MessageSquare color={color} size={19} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="calories"
+        options={{
+          title: 'Calorie Tracker',
+          tabBarLabel: 'Calories',
+          tabBarIcon: ({ color }) => (
+            <Flame color={color} size={19} />
           ),
         }}
       />
@@ -128,8 +139,8 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarLabel: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <Settings color={color} size={size} />
+          tabBarIcon: ({ color }) => (
+            <Settings color={color} size={19} />
           ),
         }}
       />

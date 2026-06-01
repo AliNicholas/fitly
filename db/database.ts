@@ -67,6 +67,21 @@ export async function initDb() {
       key TEXT PRIMARY KEY,
       value TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS calorie_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,
+      photo_uri TEXT,
+      text_input TEXT,
+      food_name TEXT NOT NULL,
+      status TEXT DEFAULT 'completed',
+      ingredients TEXT,
+      calories REAL DEFAULT 0,
+      protein REAL DEFAULT 0,
+      fat REAL DEFAULT 0,
+      carbohydrates REAL DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   await ensureColumn(db, 'exercises', 'description', 'description TEXT');
