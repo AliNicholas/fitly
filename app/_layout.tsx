@@ -28,6 +28,7 @@ void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [dbLoaded, setDbLoaded] = useState(false);
+  const [minimumTimeElapsed, setMinimumTimeElapsed] = useState(false);
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -39,6 +40,14 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontError) throw fontError;
   }, [fontError]);
+
+  // Ensure splash screen shows for at least 2 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinimumTimeElapsed(true);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Initialize SQLite database
   useEffect(() => {
@@ -55,12 +64,12 @@ export default function RootLayout() {
     setupDatabase();
   }, []);
 
-  // Hide splash screen when fonts and database are ready
+  // Hide splash screen when fonts, database, and minimum time are all ready
   useEffect(() => {
-    if (fontsLoaded && dbLoaded) {
+    if (fontsLoaded && dbLoaded && minimumTimeElapsed) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, dbLoaded]);
+  }, [fontsLoaded, dbLoaded, minimumTimeElapsed]);
 
   if (!fontsLoaded || !dbLoaded) {
     return (
