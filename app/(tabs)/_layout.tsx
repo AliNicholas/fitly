@@ -4,6 +4,7 @@ import { Platform, Pressable, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LayoutDashboard, Dumbbell, Calendar, MessageSquare, Settings } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { useAppTheme } from '../../contexts/ThemeContext';
 
 function AnimatedTabBarButton({ children, onPress, ...props }: any) {
   const scaleValue = useRef(new Animated.Value(1)).current;
@@ -44,6 +45,7 @@ function AnimatedTabBarButton({ children, onPress, ...props }: any) {
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { colors } = useAppTheme();
   
   // Dynamic bottom layout calculation (increased spacing to lift elements further)
   const bottomInset = insets.bottom > 0 ? (insets.bottom + 8) : 18;
@@ -53,22 +55,22 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#8b5cf6', // brand-500 violet
-        tabBarInactiveTintColor: '#64648a', // muted purple-grey
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: '#0a0a1e', // darker navy
-          borderTopColor: '#2a2a4a', // border-color
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.border,
           height: Platform.OS === 'ios' ? (64 + bottomInset) : (62 + bottomInset),
           paddingBottom: bottomInset,
           paddingTop: 10,
         },
         headerStyle: {
-          backgroundColor: '#0f0f23', // surface
+          backgroundColor: colors.surface,
           shadowColor: 'transparent',
           borderBottomWidth: 1,
-          borderBottomColor: '#2a2a4a',
+          borderBottomColor: colors.border,
         },
         headerTitleStyle: {
-          color: '#f8fafc', // text-primary
+          color: colors.textPrimary,
           fontFamily: 'Inter_600SemiBold',
           fontSize: 20,
         },
@@ -134,4 +136,3 @@ export default function TabLayout() {
     </Tabs>
   );
 }
-

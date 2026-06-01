@@ -1,21 +1,17 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
   ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
-import { Plus, Edit2, Trash2, Calendar, ClipboardList, ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { getSessions, addSession, updateSession, deleteSession, Session, SessionExercise } from '../../db/sessions';
-import { getExercises, Exercise } from '../../db/exercises';
-import { ExerciseRow } from '../../components/ExerciseRow';
-import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Calendar, ClipboardList, Edit2, Plus, Trash2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { deleteSession, getSessions, Session } from '../../db/sessions';
 import { useCustomDialog } from '../../components/CustomDialog';
 
 function parseDateKey(dateKey: string): Date | null {
@@ -42,41 +38,20 @@ function parseDateKey(dateKey: string): Date | null {
   return date;
 }
 
-function getPickerMonthDate(dateKey?: string): Date {
-  const date = dateKey ? parseDateKey(dateKey) : null;
-  const pickerMonth = date ?? new Date();
-  pickerMonth.setDate(1);
-  pickerMonth.setHours(0, 0, 0, 0);
-  return pickerMonth;
-}
-
 export default function SessionsScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { showDialog } = useCustomDialog();
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Form states
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingSession, setEditingSession] = useState<Session | null>(null);
-  const [sessionDate, setSessionDate] = useState('');
-  const [sessionNotes, setSessionNotes] = useState('');
-  const [sessionExercises, setSessionExercises] = useState<
-    { exercise_id: number; sets: string; reps: string; weight: string; isBodyweight: boolean; isTime: boolean }[]
-  >([]);
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const [pickerDate, setPickerDate] = useState(() => getPickerMonthDate());
 
   const loadData = useCallback(async () => {
     try {
       const sessData = await getSessions();
-      const exData = await getExercises();
       setSessions(sessData);
-      setAvailableExercises(exData);
-      setLoading(false);
-    } catch (e) {
-      console.error('Failed to load sessions data:', e);
+    } catch (error) {
+      console.error('Failed to load sessions data:', error);
+    } finally {
       setLoading(false);
     }
   }, []);
@@ -87,156 +62,17 @@ export default function SessionsScreen() {
     }, [loadData])
   );
 
-  const getTodayDateString = () => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
   const handleAddSessionPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (availableExercises.length === 0) {
-      showDialog({
-        title: 'No Exercises',
-        message: 'You must create at least one exercise in the Exercises tab before logging a session!'
-      });
-      return;
-    }
-    setEditingSession(null);
-    const initialDate = getTodayDateString();
-    setSessionDate(initialDate);
-    setPickerDate(getPickerMonthDate(initialDate));
-    setDatePickerOpen(false);
-
-    setSessionNotes('');
-    setSessionExercises([
-      { exercise_id: availableExercises[0].id, sets: '3', reps: '10', weight: '', isBodyweight: false, isTime: false },
-    ]);
-    setModalVisible(true);
+    router.push('/session-form' as any);
   };
 
-  const handleEditSessionPress = (sess: Session) => {
+  const handleEditSessionPress = (session: Session) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setEditingSession(sess);
-    setSessionDate(sess.date);
-    setPickerDate(getPickerMonthDate(sess.date));
-    setDatePickerOpen(false);
-
-    setSessionNotes(sess.notes || '');
-
-    // Map database session_exercises to our form structure
-    const formExercises = sess.exercises.map((se) => ({
-      exercise_id: se.exercise_id,
-      sets: se.sets != null ? se.sets.toString() : '',
-      reps: se.reps != null ? se.reps.toString() : '',
-      weight: se.weight != null ? se.weight.toString() : '',
-      isBodyweight: se.weight === null || se.weight === 0, // 0 or null represents Bodyweight (BW)
-      isTime: se.is_time === 1,
-    }));
-
-    setSessionExercises(formExercises);
-    setModalVisible(true);
-  };
-
-  const handleAddExerciseRow = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSessionExercises([
-      ...sessionExercises,
-      { exercise_id: availableExercises[0]?.id || 0, sets: '3', reps: '10', weight: '', isBodyweight: false, isTime: false },
-    ]);
-  };
-
-  const handleRemoveExerciseRow = (index: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (sessionExercises.length === 1) {
-      showDialog({
-        title: 'Required',
-        message: 'A session must have at least one logged exercise.'
-      });
-      return;
-    }
-    const updated = [...sessionExercises];
-    updated.splice(index, 1);
-    setSessionExercises(updated);
-  };
-
-  const handleUpdateExerciseRow = (index: number, field: string | Record<string, any>, value?: any) => {
-    setSessionExercises((prev) => {
-      const updated = [...prev];
-      if (typeof field === 'string') {
-        updated[index] = {
-          ...updated[index],
-          [field]: value,
-        };
-      } else {
-        updated[index] = {
-          ...updated[index],
-          ...field,
-        };
-      }
-      return updated;
-    });
-  };
-
-  const handleSaveSession = async () => {
-    // Validate date format YYYY-MM-DD
-    if (!parseDateKey(sessionDate.trim())) {
-      showDialog({
-        title: 'Required',
-        message: 'Please enter a valid date in YYYY-MM-DD format.'
-      });
-      return;
-    }
-
-    if (sessionExercises.some((ex) => !ex.exercise_id)) {
-      showDialog({
-        title: 'Required',
-        message: 'Please make sure all rows have an exercise selected.'
-      });
-      return;
-    }
-
-    // Map our form data back to Omit<SessionExercise, 'order'>
-    const dbExercises: Omit<SessionExercise, 'order'>[] = sessionExercises.map((ex) => {
-      const parsedSets = parseInt(ex.sets.trim(), 10);
-      const setsVal = !isNaN(parsedSets) ? parsedSets : null;
-
-      const parsedReps = parseInt(ex.reps.trim(), 10);
-      const repsVal = !isNaN(parsedReps) ? parsedReps : null;
-
-      // Body weight calculation
-      let weightVal: number | null = null;
-      if (!ex.isBodyweight && ex.weight.trim() !== '') {
-        const parsedWeight = parseFloat(ex.weight.trim());
-        weightVal = !isNaN(parsedWeight) ? parsedWeight : null;
-      }
-
-      return {
-        exercise_id: ex.exercise_id,
-        sets: setsVal,
-        reps: repsVal,
-        weight: weightVal,
-        is_time: ex.isTime ? 1 : 0,
-      };
-    });
-
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      if (editingSession) {
-        await updateSession(editingSession.id, sessionDate.trim(), sessionNotes.trim(), dbExercises);
-      } else {
-        await addSession(sessionDate.trim(), sessionNotes.trim(), dbExercises);
-      }
-      setModalVisible(false);
-      loadData();
-    } catch (e: any) {
-      showDialog({
-        title: 'Error',
-        message: e.message || 'Failed to save session.'
-      });
-    }
+    router.push({
+      pathname: '/session-form',
+      params: { id: String(session.id) },
+    } as any);
   };
 
   const handleDeleteSession = (id: number) => {
@@ -252,13 +88,13 @@ export default function SessionsScreen() {
           await deleteSession(id);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           loadData();
-        } catch (e: any) {
+        } catch (error: any) {
           showDialog({
             title: 'Error',
-            message: e.message || 'Failed to delete session'
+            message: error.message || 'Failed to delete session',
           });
         }
-      }
+      },
     });
   };
 
@@ -266,144 +102,66 @@ export default function SessionsScreen() {
     const date = parseDateKey(dateStr);
 
     if (date) {
-      return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      return date.toLocaleDateString(undefined, {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
     }
 
     return dateStr;
   };
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  const pickerDays = React.useMemo(() => {
-    const year = pickerDate.getFullYear();
-    const month = pickerDate.getMonth();
-
-    const firstDay = new Date(year, month, 1);
-    const startDayOfWeek = firstDay.getDay(); // 0-6
-
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const daysInPrevMonth = new Date(year, month, 0).getDate();
-
-    const days = [];
-
-    // Pad previous month
-    for (let i = startDayOfWeek - 1; i >= 0; i--) {
-      const prevDate = new Date(year, month - 1, daysInPrevMonth - i);
-      const y = prevDate.getFullYear();
-      const m = String(prevDate.getMonth() + 1).padStart(2, '0');
-      const d = String(prevDate.getDate()).padStart(2, '0');
-      days.push({
-        day: daysInPrevMonth - i,
-        isCurrentMonth: false,
-        dateString: `${y}-${m}-${d}`
-      });
-    }
-
-    // Current month
-    for (let i = 1; i <= daysInMonth; i++) {
-      const m = String(month + 1).padStart(2, '0');
-      const d = String(i).padStart(2, '0');
-      days.push({
-        day: i,
-        isCurrentMonth: true,
-        dateString: `${year}-${m}-${d}`
-      });
-    }
-
-    // Pad next month
-    const remainingCells = 42 - days.length;
-    for (let i = 1; i <= remainingCells; i++) {
-      const nextDate = new Date(year, month + 1, i);
-      const y = nextDate.getFullYear();
-      const m = String(nextDate.getMonth() + 1).padStart(2, '0');
-      const d = String(nextDate.getDate()).padStart(2, '0');
-      days.push({
-        day: i,
-        isCurrentMonth: false,
-        dateString: `${y}-${m}-${d}`
-      });
-    }
-
-    return days;
-  }, [pickerDate]);
-
-  const handleSelectPickerDate = (dateStr: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSessionDate(dateStr);
-    setDatePickerOpen(false);
-  };
-
-  const handlePrevPickerMonth = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setPickerDate((prev) => {
-      const d = new Date(prev);
-      d.setMonth(d.getMonth() - 1);
-      return d;
-    });
-  };
-
-  const handleNextPickerMonth = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setPickerDate((prev) => {
-      const d = new Date(prev);
-      d.setMonth(d.getMonth() + 1);
-      return d;
-    });
-  };
-
   if (loading) {
     return (
-      <View className="flex-1 bg-[#050510] justify-center items-center">
+      <View className="flex-1 bg-[#f8fafc] dark:bg-[#050510] justify-center items-center">
         <ActivityIndicator size="large" color="#8b5cf6" />
-        <Text className="text-text-secondary-dark font-medium text-base mt-4">Opening Workout Vault...</Text>
+        <Text className="text-[#475569] dark:text-text-secondary-dark font-medium text-base mt-4">
+          Opening Workout Vault...
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={{ paddingTop: insets.top }} className="flex-1 bg-[#050510]">
-      {/* Sessions Feed */}
+    <View style={{ paddingTop: insets.top }} className="flex-1 bg-[#f8fafc] dark:bg-[#050510]">
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
         {sessions.length > 0 ? (
-          sessions.map((sess) => (
+          sessions.map((session) => (
             <View
-              key={sess.id}
-              className="bg-surface-dark border border-borderColor-dark/40 rounded-3xl p-5 mb-5 shadow-md gap-4 flex-col"
+              key={session.id}
+              className="bg-white dark:bg-surface-dark border border-[#e2e8f0] dark:border-borderColor-dark/40 rounded-3xl p-5 mb-5 shadow-md gap-4 flex-col"
             >
-              {/* Card Header */}
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center gap-3 flex-1 mr-3">
                   <View className="p-3 bg-brand-900/40 border border-brand-500/30 rounded-3xl">
                     <Calendar color="#8b5cf6" size={20} />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-text-primary-dark font-bold text-base" numberOfLines={1}>
-                      {formatDateLabel(sess.date)}
+                    <Text className="text-[#0f172a] dark:text-text-primary-dark font-bold text-base" numberOfLines={1}>
+                      {formatDateLabel(session.date)}
                     </Text>
-                    {sess.notes ? (
-                      <Text className="text-text-secondary-dark text-sm mt-0.5" numberOfLines={1}>
-                        {sess.notes}
+                    {session.notes ? (
+                      <Text className="text-[#475569] dark:text-text-secondary-dark text-sm mt-0.5" numberOfLines={1}>
+                        {session.notes}
                       </Text>
                     ) : null}
                   </View>
                 </View>
 
-                {/* Actions */}
                 <View className="flex-row gap-2.5">
                   <TouchableOpacity
-                    onPress={() => handleEditSessionPress(sess)}
-                    className="p-2 bg-surface-light-dark border border-borderColor-dark/40 rounded-2xl"
+                    onPress={() => handleEditSessionPress(session)}
+                    className="p-2 bg-[#f1f5f9] dark:bg-surface-light-dark border border-[#e2e8f0] dark:border-borderColor-dark/40 rounded-2xl"
                   >
                     <Edit2 color="#94a3b8" size={16} />
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => handleDeleteSession(sess.id)}
+                    onPress={() => handleDeleteSession(session.id)}
                     className="p-2 bg-red-950/10 border border-red-500/20 rounded-2xl"
                   >
                     <Trash2 color="#f87171" size={16} />
@@ -411,29 +169,31 @@ export default function SessionsScreen() {
                 </View>
               </View>
 
-              {/* Notes */}
-              {sess.notes ? (
-                <View className="bg-surface-light-dark/30 rounded-3xl p-4 border border-borderColor-dark/10">
-                  <Text className="text-text-secondary-dark text-sm italic leading-5">{sess.notes}</Text>
+              {session.notes ? (
+                <View className="bg-[#f1f5f9] dark:bg-surface-light-dark/30 rounded-3xl p-4 border border-[#e2e8f0] dark:border-borderColor-dark/10">
+                  <Text className="text-[#475569] dark:text-text-secondary-dark text-sm italic leading-5">
+                    {session.notes}
+                  </Text>
                 </View>
               ) : null}
 
-              {/* Exercises List inside the card */}
-              <View className="border-t border-borderColor-dark/20 pt-3 gap-2.5 flex-col">
-                {sess.exercises.map((se, i) => (
-                  <View key={se.id || i} className="flex-row justify-between items-center py-1.5">
+              <View className="border-t border-[#e2e8f0] dark:border-borderColor-dark/20 pt-3 gap-2.5 flex-col">
+                {session.exercises.map((exercise, index) => (
+                  <View key={exercise.id || index} className="flex-row justify-between items-center py-1.5">
                     <View className="flex-1 mr-3">
-                      <Text className="text-text-primary-dark font-semibold text-sm">
-                        {i + 1}. {se.name}
+                      <Text className="text-[#0f172a] dark:text-text-primary-dark font-semibold text-sm">
+                        {index + 1}. {exercise.name}
                       </Text>
-                      {se.category_name && (
-                        <Text className="text-text-secondary-dark text-xs uppercase font-bold tracking-wider mt-0.5">
-                          {se.category_name}
+                      {exercise.category_name ? (
+                        <Text className="text-[#475569] dark:text-text-secondary-dark text-xs uppercase font-bold tracking-wider mt-0.5">
+                          {exercise.category_name}
                         </Text>
-                      )}
+                      ) : null}
                     </View>
                     <Text className="text-brand-400 font-bold text-sm text-right">
-                      {se.sets} sets × {se.reps}{se.is_time === 1 ? 's' : ' reps'} @ {se.weight != null && se.weight > 0 ? `${se.weight} kg` : 'BW'}
+                      {exercise.sets} sets x {exercise.reps}
+                      {exercise.is_time === 1 ? 's' : ' reps'} @{' '}
+                      {exercise.weight != null && exercise.weight > 0 ? `${exercise.weight} kg` : 'BW'}
                     </Text>
                   </View>
                 ))}
@@ -443,15 +203,16 @@ export default function SessionsScreen() {
         ) : (
           <View className="py-28 justify-center items-center">
             <ClipboardList color="#475569" size={48} />
-            <Text className="text-text-primary-dark font-semibold text-base mt-3">No Workouts Logged Yet</Text>
-            <Text className="text-text-secondary-dark text-sm text-center mt-1">
+            <Text className="text-[#0f172a] dark:text-text-primary-dark font-semibold text-base mt-3">
+              No Workouts Logged Yet
+            </Text>
+            <Text className="text-[#475569] dark:text-text-secondary-dark text-sm text-center mt-1">
               Tap the floating button below to record your first session!
             </Text>
           </View>
         )}
       </ScrollView>
 
-      {/* Floating Add Session Button */}
       <TouchableOpacity
         onPress={handleAddSessionPress}
         className="absolute bottom-6 right-6 rounded-[22px] overflow-hidden shadow-lg shadow-brand-500/40"
@@ -465,157 +226,6 @@ export default function SessionsScreen() {
           <Plus color="#ffffff" size={28} />
         </LinearGradient>
       </TouchableOpacity>
-
-      {/* Bottom Sheet Modal: Session Entry Form */}
-      <BottomSheetModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        title={editingSession ? 'Edit Workout Session' : 'Record Workout'}
-      >
-        <View className="gap-4 flex-col">
-
-          {/* Date Picker Button */}
-          <View className="gap-1.5 flex-col">
-            <Text className="text-sm font-semibold text-text-secondary-dark uppercase tracking-wider">
-              Workout Date *
-            </Text>
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setDatePickerOpen(!datePickerOpen);
-              }}
-              className="bg-surface-dark border border-borderColor-dark rounded-2xl flex-row items-center justify-between px-5 py-3.5"
-            >
-              <Text className="text-text-primary-dark text-base font-semibold">
-                {formatDateLabel(sessionDate)}
-              </Text>
-              <Calendar color="#94a3b8" size={20} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Collapsible Calendar Date Picker Drawer */}
-          {datePickerOpen && (
-            <View className="bg-surface-dark border border-borderColor-dark/40 rounded-3xl p-5 shadow-lg gap-4 flex-col mt-1">
-              {/* Header Month Navigation */}
-              <View className="flex-row justify-between items-center mb-2">
-                <TouchableOpacity onPress={handlePrevPickerMonth} className="p-2 bg-surface-light-dark border border-borderColor-dark/40 rounded-2xl">
-                  <ChevronLeft color="#94a3b8" size={18} />
-                </TouchableOpacity>
-                <Text className="text-text-primary-dark font-extrabold text-sm uppercase tracking-wider">
-                  {monthNames[pickerDate.getMonth()]} {pickerDate.getFullYear()}
-                </Text>
-                <TouchableOpacity onPress={handleNextPickerMonth} className="p-2 bg-surface-light-dark border border-borderColor-dark/40 rounded-2xl">
-                  <ChevronRight color="#94a3b8" size={18} />
-                </TouchableOpacity>
-              </View>
-
-              {/* Grid Header */}
-              <View className="flex-row justify-between mb-1">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
-                  <Text key={idx} className="text-center text-xs font-bold text-text-secondary-dark w-[13.5%]">
-                    {day}
-                  </Text>
-                ))}
-              </View>
-
-              {/* Grid Days */}
-              <View className="flex-row flex-wrap justify-between">
-                {pickerDays.map((day, idx) => {
-                  const isSelected = day.dateString === sessionDate;
-                  return (
-                    <TouchableOpacity
-                      key={idx}
-                      onPress={() => handleSelectPickerDate(day.dateString)}
-                      className={`
-                        w-[13.5%] aspect-square flex items-center justify-center rounded-xl mb-1.5 border
-                        ${!day.isCurrentMonth ? 'border-transparent opacity-20' : 'border-borderColor-dark/10'}
-                        ${isSelected
-                          ? 'bg-brand-500 border-brand-600 shadow-md shadow-brand-500/30'
-                          : 'bg-surface-light-dark border-borderColor-dark/30'}
-                      `}
-                    >
-                      <Text
-                        className={`
-                          text-xs font-bold
-                          ${isSelected ? 'text-white' : day.isCurrentMonth ? 'text-text-primary-dark' : 'text-text-secondary-dark'}
-                        `}
-                      >
-                        {day.day}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
-          {/* Notes */}
-          <View className="gap-1 flex-col">
-            <Text className="text-sm font-semibold text-text-secondary-dark uppercase tracking-wider">
-              Workout Notes
-            </Text>
-            <TextInput
-              value={sessionNotes}
-              onChangeText={setSessionNotes}
-              placeholder="e.g. Smashed Bench Press PR! Felt amazing today."
-              placeholderTextColor="#475569"
-              multiline
-              numberOfLines={2}
-              className="bg-surface-dark border border-borderColor-dark rounded-2xl px-5 py-3.5 text-text-primary-dark text-base min-h-[70px]"
-            />
-          </View>
-
-          {/* Exercises Header */}
-          <View className="flex-row justify-between items-center pt-2 border-t border-borderColor-dark/20 mt-2">
-            <Text className="text-sm font-bold text-text-primary-dark uppercase tracking-wider">
-              Logged Exercises ({sessionExercises.length})
-            </Text>
-            <TouchableOpacity
-              onPress={handleAddExerciseRow}
-              className="bg-brand-900/40 border border-brand-500/30 px-3.5 py-2 rounded-3xl flex-row items-center gap-1"
-            >
-              <Plus color="#a78bfa" size={16} />
-              <Text className="text-brand-400 font-bold text-xs uppercase tracking-wider">
-                Add Entry
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Exercises entry list */}
-          <View className="mt-2">
-            {sessionExercises.map((se, i) => (
-              <ExerciseRow
-                key={i}
-                index={i}
-                availableExercises={availableExercises}
-                selectedExerciseId={se.exercise_id}
-                sets={se.sets}
-                reps={se.reps}
-                weight={se.weight}
-                isBodyweight={se.isBodyweight}
-                isTime={se.isTime}
-                onUpdate={(field, val) => handleUpdateExerciseRow(i, field, val)}
-                onRemove={() => handleRemoveExerciseRow(i)}
-              />
-            ))}
-          </View>
-
-          {/* Submit */}
-          <TouchableOpacity
-            onPress={handleSaveSession}
-            className="mt-6 shadow-lg shadow-brand-500/20"
-          >
-            <LinearGradient
-              colors={['#8b5cf6', '#06b6d4']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              className="py-4 rounded-2xl items-center justify-center"
-            >
-              <Text className="text-white font-bold text-base">Save Workout Session</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      </BottomSheetModal>
     </View>
   );
 }

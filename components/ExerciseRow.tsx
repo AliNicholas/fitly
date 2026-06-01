@@ -40,7 +40,7 @@ export function ExerciseRow({
   };
 
   return (
-    <View className="bg-surface-light-dark/40 border border-[#2a2a4a]/50 rounded-3xl p-5 mb-4 gap-4 flex-col">
+    <View className="bg-[#f1f5f9] dark:bg-surface-light-dark/40 border border-[#e2e8f0] dark:border-[#2a2a4a]/50 rounded-3xl p-5 mb-4 gap-4 flex-col">
       {/* Header and selector */}
       <View className="flex-row items-center justify-between">
         <Text className="text-sm font-bold text-brand-400">Exercise #{index + 1}</Text>
@@ -51,15 +51,15 @@ export function ExerciseRow({
 
       {/* Inline Exercise Dropdown Trigger */}
       <View className="gap-1.5 flex-col">
-        <Text className="text-xs font-semibold text-text-secondary-dark uppercase tracking-wider">Exercise Name</Text>
+        <Text className="text-xs font-semibold text-[#475569] dark:text-text-secondary-dark uppercase tracking-wider">Exercise Name</Text>
         <TouchableOpacity
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setDropdownOpen(!dropdownOpen);
           }}
-          className="bg-surface-dark border border-[#2a2a4a] rounded-2xl flex-row items-center justify-between px-4 py-3.5"
+          className="bg-white dark:bg-surface-dark border border-[#e2e8f0] dark:border-[#2a2a4a] rounded-2xl flex-row items-center justify-between px-4 py-3.5"
         >
-          <Text className={`text-base flex-1 ${selectedExercise ? 'text-text-primary-dark font-medium' : 'text-text-secondary-dark font-medium'}`}>
+          <Text className={`text-base flex-1 ${selectedExercise ? 'text-[#0f172a] dark:text-text-primary-dark font-medium' : 'text-[#475569] dark:text-text-secondary-dark font-medium'}`}>
             {selectedExercise ? `${selectedExercise.name} (${selectedExercise.category_name})` : '-- Select Exercise --'}
           </Text>
           <ChevronDown color="#94a3b8" size={20} style={{ transform: [{ rotate: dropdownOpen ? '180deg' : '0deg' }] }} />
@@ -68,28 +68,28 @@ export function ExerciseRow({
 
       {/* Inline Scrollable List dropdown */}
       {dropdownOpen && (
-        <View className="bg-surface-dark border border-[#2a2a4a]/80 rounded-2xl p-2 max-h-48 mt-1 shadow-inner shadow-black/40">
+        <View className="bg-white dark:bg-surface-dark border border-[#e2e8f0] dark:border-[#2a2a4a]/80 rounded-2xl p-2 max-h-48 mt-1 shadow-inner shadow-black/40">
           <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
             {availableExercises.length === 0 ? (
               <View className="py-6 items-center justify-center">
-                <Text className="text-text-secondary-dark text-sm text-center">No exercises found.</Text>
-                <Text className="text-text-secondary-dark text-xs mt-1 text-center">Add exercises first in the Exercises tab!</Text>
+                <Text className="text-[#475569] dark:text-text-secondary-dark text-sm text-center">No exercises found.</Text>
+                <Text className="text-[#475569] dark:text-text-secondary-dark text-xs mt-1 text-center">Add exercises first in the Exercises tab!</Text>
               </View>
             ) : (
               availableExercises.map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   onPress={() => handleSelect(item.id)}
-                  className={`py-3 px-3 border-b border-[#2a2a4a]/20 flex-row items-center justify-between ${
-                    item.id === selectedExerciseId ? 'bg-surface-light-dark/40 rounded-xl' : ''
+                  className={`py-3 px-3 border-b border-[#e2e8f0] dark:border-[#2a2a4a]/20 flex-row items-center justify-between ${
+                    item.id === selectedExerciseId ? 'bg-[#f1f5f9] dark:bg-surface-light-dark/40 rounded-xl' : ''
                   }`}
                 >
-                  <Text className={`text-sm ${item.id === selectedExerciseId ? 'text-brand-400 font-semibold' : 'text-text-primary-dark font-medium'}`}>
+                  <Text className={`text-sm ${item.id === selectedExerciseId ? 'text-brand-400 font-semibold' : 'text-[#0f172a] dark:text-text-primary-dark font-medium'}`}>
                     {item.name}
                   </Text>
                   {item.category_name && (
-                    <View className="bg-surface-light-dark px-2.5 py-0.5 rounded-lg border border-[#2a2a4a]/30">
-                      <Text className="text-text-secondary-dark text-[10px] font-bold uppercase tracking-wider">
+                    <View className="bg-[#f1f5f9] dark:bg-surface-light-dark px-2.5 py-0.5 rounded-lg border border-[#e2e8f0] dark:border-[#2a2a4a]/30">
+                      <Text className="text-[#475569] dark:text-text-secondary-dark text-[10px] font-bold uppercase tracking-wider">
                         {item.category_name}
                       </Text>
                     </View>
@@ -101,107 +101,121 @@ export function ExerciseRow({
         </View>
       )}
 
-      {/* Two-row Spacious Layout for Sets/Reps and Weight/Bodyweight */}
       <View className="gap-3 flex-col">
-        {/* Row 1: Sets & Reps side by side */}
+        <View className="gap-1.5 flex-col">
+          <Text className="text-xs font-semibold text-[#475569] dark:text-text-secondary-dark uppercase tracking-wider">Measure</Text>
+          <View className="flex-row bg-[#e2e8f0] dark:bg-[#151530] rounded-2xl p-1 border border-[#e2e8f0] dark:border-[#2a2a4a]/50 gap-1">
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onUpdate('isTime', false);
+              }}
+              activeOpacity={0.75}
+              className={`flex-1 py-3 rounded-xl items-center justify-center border ${
+                !isTime
+                  ? 'bg-brand-600 border-brand-500'
+                  : 'bg-transparent border-transparent'
+              }`}
+            >
+              <Text className={`text-sm font-bold ${!isTime ? 'text-white' : 'text-[#475569] dark:text-text-secondary-dark'}`}>
+                Reps
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onUpdate('isTime', true);
+              }}
+              activeOpacity={0.75}
+              className={`flex-1 py-3 rounded-xl items-center justify-center border ${
+                isTime
+                  ? 'bg-cyan-600 border-cyan-500'
+                  : 'bg-transparent border-transparent'
+              }`}
+            >
+              <Text className={`text-sm font-bold ${isTime ? 'text-white' : 'text-[#475569] dark:text-text-secondary-dark'}`}>
+                Seconds
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <View className="flex-row gap-3 w-full">
-          {/* Sets */}
           <View className="flex-1 gap-1.5 flex-col">
-            <Text className="text-xs font-semibold text-text-secondary-dark uppercase tracking-wider">Sets</Text>
+            <Text className="text-xs font-semibold text-[#475569] dark:text-text-secondary-dark uppercase tracking-wider">Sets</Text>
             <TextInput
               value={sets}
               onChangeText={(val) => onUpdate('sets', val)}
               keyboardType="numeric"
               placeholder="0"
               placeholderTextColor="#475569"
-              className="bg-surface-dark border border-[#2a2a4a] rounded-2xl px-4 py-3 text-text-primary-dark font-medium text-base text-center"
+              className="bg-white dark:bg-surface-dark border border-[#e2e8f0] dark:border-[#2a2a4a] rounded-2xl px-4 py-3 text-[#0f172a] dark:text-text-primary-dark font-medium text-base text-center"
             />
           </View>
-
-          {/* Reps / Seconds */}
           <View className="flex-1 gap-1.5 flex-col">
-            <View className="flex-row justify-between items-center mb-1.5">
-              <Text className="text-xs font-semibold text-text-secondary-dark uppercase tracking-wider">
-                {isTime ? 'Secs' : 'Reps'}
-              </Text>
-              {/* Segmented Toggle Control */}
-              <View className="flex-row bg-[#151530] rounded-xl p-0.5 border border-[#2a2a4a]/50 gap-0.5 items-center">
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    onUpdate('isTime', false);
-                  }}
-                  className={`px-2.5 py-0.5 rounded-lg ${!isTime ? 'bg-brand-600' : ''}`}
-                >
-                  <Text className={`text-[10px] font-bold uppercase ${!isTime ? 'text-white' : 'text-text-secondary-dark'}`}>
-                    Rep
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    onUpdate('isTime', true);
-                  }}
-                  className={`px-2.5 py-0.5 rounded-lg ${isTime ? 'bg-brand-600' : ''}`}
-                >
-                  <Text className={`text-[10px] font-bold uppercase ${isTime ? 'text-white' : 'text-text-secondary-dark'}`}>
-                    Sec
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            <Text className="text-xs font-semibold text-[#475569] dark:text-text-secondary-dark uppercase tracking-wider">
+              {isTime ? 'Seconds' : 'Reps'}
+            </Text>
             <TextInput
               value={reps}
               onChangeText={(val) => onUpdate('reps', val)}
               keyboardType="numeric"
-              placeholder={isTime ? '0s' : '0'}
+              placeholder={isTime ? '45' : '10'}
               placeholderTextColor="#475569"
-              className="bg-surface-dark border border-[#2a2a4a] rounded-2xl px-4 py-3 text-text-primary-dark font-medium text-base text-center"
+              className="bg-white dark:bg-surface-dark border border-[#e2e8f0] dark:border-[#2a2a4a] rounded-2xl px-4 py-3 text-[#0f172a] dark:text-text-primary-dark font-medium text-base text-center"
             />
           </View>
         </View>
-
-        {/* Row 2: Weight + BW Toggle taking full width */}
         <View className="gap-1.5 flex-col">
-          <Text className="text-xs font-semibold text-text-secondary-dark uppercase tracking-wider">Weight</Text>
-          <View className="flex-row items-center gap-3 w-full">
-            {/* Wrap TextInput in a flex-1 View to safely constrain its touch intercept bounds */}
-            <View className="flex-1">
-              <TextInput
-                value={isBodyweight ? 'BW' : weight}
-                onChangeText={(val) => onUpdate('weight', val)}
-                keyboardType="numeric"
-                editable={!isBodyweight}
-                placeholder="kg"
-                placeholderTextColor="#475569"
-                className={`w-full bg-surface-dark border border-[#2a2a4a] rounded-2xl px-4 py-3 text-text-primary-dark font-medium text-base text-center ${
-                  isBodyweight ? 'text-brand-400 opacity-60 font-bold' : ''
-                }`}
-              />
-            </View>
-            {/* BW Toggle Button */}
+          <Text className="text-xs font-semibold text-[#475569] dark:text-text-secondary-dark uppercase tracking-wider">Load Type</Text>
+          <View className="flex-row bg-[#e2e8f0] dark:bg-[#151530] rounded-2xl p-1 border border-[#e2e8f0] dark:border-[#2a2a4a]/50 gap-1">
             <TouchableOpacity
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                const nextIsBodyweight = !isBodyweight;
-                if (nextIsBodyweight) {
-                  onUpdate({ isBodyweight: true, weight: '' });
-                } else {
-                  onUpdate('isBodyweight', false);
-                }
+                onUpdate('isBodyweight', false);
               }}
-              activeOpacity={0.7}
-              className={`px-5 py-3 rounded-2xl border flex-row items-center justify-center min-h-[48px] ${
-                isBodyweight
-                  ? 'bg-brand-900 border-brand-500 shadow-md shadow-brand-500/10'
-                  : 'bg-surface-dark border-[#2a2a4a]'
+              activeOpacity={0.75}
+              className={`flex-1 py-3 rounded-xl items-center justify-center border ${
+                !isBodyweight
+                  ? 'bg-brand-600 border-brand-500'
+                  : 'bg-transparent border-transparent'
               }`}
             >
-              <Text className={`text-sm font-bold ${isBodyweight ? 'text-brand-400' : 'text-text-secondary-dark'}`}>
-                Bodyweight (BW)
+              <Text className={`text-sm font-bold ${!isBodyweight ? 'text-white' : 'text-[#475569] dark:text-text-secondary-dark'}`}>
+                Weighted
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onUpdate({ isBodyweight: true, weight: '' });
+              }}
+              activeOpacity={0.75}
+              className={`flex-1 py-3 rounded-xl items-center justify-center border ${
+                isBodyweight
+                  ? 'bg-cyan-600 border-cyan-500'
+                  : 'bg-transparent border-transparent'
+              }`}
+            >
+              <Text className={`text-sm font-bold ${isBodyweight ? 'text-white' : 'text-[#475569] dark:text-text-secondary-dark'}`}>
+                Bodyweight
               </Text>
             </TouchableOpacity>
           </View>
+
+          {!isBodyweight && (
+            <View className="gap-1.5 flex-col mt-2">
+              <Text className="text-xs font-semibold text-[#475569] dark:text-text-secondary-dark uppercase tracking-wider">Weight (kg)</Text>
+              <TextInput
+                value={weight}
+                onChangeText={(val) => onUpdate('weight', val)}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#475569"
+                className="w-full bg-white dark:bg-surface-dark border border-[#e2e8f0] dark:border-[#2a2a4a] rounded-2xl px-4 py-3 text-[#0f172a] dark:text-text-primary-dark font-medium text-base text-center"
+              />
+            </View>
+          )}
         </View>
       </View>
     </View>

@@ -41,9 +41,9 @@ export default function DashboardScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-[#050510] justify-center items-center">
+      <View className="flex-1 bg-[#f8fafc] dark:bg-[#050510] justify-center items-center">
         <ActivityIndicator size="large" color="#8b5cf6" />
-        <Text className="text-text-secondary-dark font-medium text-base mt-4">Assembling dashboard...</Text>
+        <Text className="text-[#475569] dark:text-text-secondary-dark font-medium text-base mt-4">Assembling dashboard...</Text>
       </View>
     );
   }
@@ -51,16 +51,16 @@ export default function DashboardScreen() {
   const streakLabel = stats ? `${stats.currentStreak} ${stats.currentStreak === 1 ? 'day' : 'days'}` : '0 days';
 
   return (
-    <View style={{ paddingTop: insets.top }} className="flex-1 bg-[#050510]">
+    <View style={{ paddingTop: insets.top }} className="flex-1 bg-[#f8fafc] dark:bg-[#050510]">
       <ScrollView
-        className="flex-1 bg-[#050510]"
+        className="flex-1 bg-[#f8fafc] dark:bg-[#050510]"
         contentContainerStyle={{ padding: 20, paddingBottom: 48 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Welcome Header */}
         <View className="mb-6">
-          <Text className="text-4xl font-extrabold text-white tracking-tight">Welcome back!</Text>
-          <Text className="text-text-secondary-dark text-base mt-1">Ready to crush your goals today?</Text>
+          <Text className="text-4xl font-extrabold text-[#0f172a] dark:text-white tracking-tight">Welcome back!</Text>
+          <Text className="text-[#475569] dark:text-text-secondary-dark text-base mt-1">Ready to crush your goals today?</Text>
         </View>
 
         {/* Main Grid Layout */}
@@ -93,10 +93,10 @@ export default function DashboardScreen() {
           {stats && stats.favoriteExercises.length > 0 ? (
             <FavoriteExercisesTable exercises={stats.favoriteExercises} />
           ) : (
-            <View className="bg-surface-dark border border-borderColor-dark/40 rounded-3xl p-7 items-center justify-center">
+            <View className="bg-white dark:bg-surface-dark border border-[#e2e8f0] dark:border-borderColor-dark/40 rounded-3xl p-7 items-center justify-center">
               <Dumbbell color="#475569" size={48} />
-              <Text className="text-text-primary-dark font-semibold text-base mt-3">No Exercises Logged Yet</Text>
-              <Text className="text-text-secondary-dark text-sm text-center mt-1">
+              <Text className="text-[#0f172a] dark:text-text-primary-dark font-semibold text-base mt-3">No Exercises Logged Yet</Text>
+              <Text className="text-[#475569] dark:text-text-secondary-dark text-sm text-center mt-1">
                 Start logging your workouts in the Sessions tab to see your favorite exercises here!
               </Text>
             </View>

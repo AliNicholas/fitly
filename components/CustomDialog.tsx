@@ -103,16 +103,16 @@ export function CustomDialogProvider({ children }: { children: ReactNode }) {
           onRequestClose={handleCancel}
         >
           <View style={styles.backdrop}>
-            <View className="bg-surface-dark border border-borderColor-dark/40 rounded-3xl p-6 w-[88%] max-w-sm items-center shadow-2xl gap-4 flex-col">
+            <View className="bg-white dark:bg-surface-dark border border-[#e2e8f0] dark:border-borderColor-dark/40 rounded-3xl p-6 w-[88%] max-w-sm items-center shadow-2xl gap-4 flex-col">
               {/* Icon badge */}
               {getIcon()}
 
               {/* Text */}
               <View className="items-center text-center">
-                <Text className="text-text-primary-dark font-extrabold text-lg text-center">
+                <Text className="text-[#0f172a] dark:text-text-primary-dark font-extrabold text-lg text-center">
                   {options.title}
                 </Text>
-                <Text className="text-text-secondary-dark text-sm leading-5 mt-2 text-center px-1">
+                <Text className="text-[#475569] dark:text-text-secondary-dark text-sm leading-5 mt-2 text-center px-1">
                   {options.message}
                 </Text>
               </View>
@@ -122,9 +122,9 @@ export function CustomDialogProvider({ children }: { children: ReactNode }) {
                 {options.showCancel && (
                   <TouchableOpacity
                     onPress={handleCancel}
-                    className="flex-1 bg-surface-light-dark border border-borderColor-dark rounded-2xl py-3.5 items-center justify-center"
+                    className="flex-1 bg-[#f1f5f9] dark:bg-surface-light-dark border border-[#e2e8f0] dark:border-borderColor-dark rounded-2xl py-3.5 items-center justify-center"
                   >
-                    <Text className="text-text-secondary-dark font-bold text-sm uppercase tracking-wider">
+                    <Text className="text-[#475569] dark:text-text-secondary-dark font-bold text-sm uppercase tracking-wider">
                       {options.cancelText || 'Cancel'}
                     </Text>
                   </TouchableOpacity>

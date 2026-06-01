@@ -8,6 +8,7 @@ import { initDb } from '../db/database';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 import { CustomDialogProvider } from '../components/CustomDialog';
+import { AppThemeProvider } from '../contexts/ThemeContext';
 
 // Suppress strict-mode warnings from react-navigation internals reading shared values during render
 configureReanimatedLogger({
@@ -72,11 +73,13 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <CustomDialogProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-      </CustomDialogProvider>
+      <AppThemeProvider>
+        <CustomDialogProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          </Stack>
+        </CustomDialogProvider>
+      </AppThemeProvider>
     </SafeAreaProvider>
   );
 }

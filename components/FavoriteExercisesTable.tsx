@@ -29,11 +29,11 @@ export function FavoriteExercisesTable({ exercises }: { exercises: FavoriteExerc
   };
 
   return (
-    <View className="bg-surface-dark border border-borderColor-dark/40 rounded-3xl p-5 shadow-md gap-4 flex-col">
+    <View className="bg-white dark:bg-surface-dark border border-[#e2e8f0] dark:border-borderColor-dark/40 rounded-3xl p-5 shadow-md gap-4 flex-col">
       {/* Title */}
       <View className="flex-row items-center gap-2 mb-2">
         <Trophy color="#eab308" size={26} />
-        <Text className="text-text-primary-dark font-bold text-xl">Favorite Exercises</Text>
+        <Text className="text-[#0f172a] dark:text-text-primary-dark font-bold text-xl">Favorite Exercises</Text>
       </View>
 
       {/* Exercises List */}
@@ -41,11 +41,11 @@ export function FavoriteExercisesTable({ exercises }: { exercises: FavoriteExerc
         {currentExercises.map((ex, i) => (
           <View
             key={ex.id}
-            className="flex-row items-center justify-between p-3 bg-surface-light-dark/40 border border-borderColor-dark/20 rounded-2xl"
+            className="flex-row items-center justify-between p-3 bg-[#f1f5f9] dark:bg-surface-light-dark/40 border border-[#e2e8f0] dark:border-borderColor-dark/20 rounded-2xl"
           >
             <View className="flex-1 mr-3">
               <View className="flex-row items-center flex-wrap mb-1.5">
-                <Text className="text-text-primary-dark font-semibold text-base mr-2">
+                <Text className="text-[#0f172a] dark:text-text-primary-dark font-semibold text-base mr-2">
                   {startIndex + i + 1}. {ex.name}
                 </Text>
                 {ex.category_name && (
@@ -56,8 +56,8 @@ export function FavoriteExercisesTable({ exercises }: { exercises: FavoriteExerc
                   </View>
                 )}
               </View>
-              <Text className="text-text-secondary-dark text-sm font-medium">
-                Logs: <Text className="text-brand-400 font-bold">{ex.log_count}</Text>  •  Max Reps: <Text className="text-text-primary-dark font-semibold">{ex.max_reps || '-'}</Text>  •  Max Weight: <Text className="text-text-primary-dark font-semibold">{ex.max_weight != null ? `${ex.max_weight} kg` : 'BW'}</Text>
+              <Text className="text-[#475569] dark:text-text-secondary-dark text-sm font-medium">
+                Logs: <Text className="text-brand-400 font-bold">{ex.log_count}</Text>  •  Max Reps: <Text className="text-[#0f172a] dark:text-text-primary-dark font-semibold">{ex.max_reps || '-'}</Text>  •  Max Weight: <Text className="text-[#0f172a] dark:text-text-primary-dark font-semibold">{ex.max_weight != null ? `${ex.max_weight} kg` : 'BW'}</Text>
               </Text>
             </View>
           </View>
@@ -66,22 +66,22 @@ export function FavoriteExercisesTable({ exercises }: { exercises: FavoriteExerc
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <View className="flex-row justify-between items-center pt-3 border-t border-borderColor-dark/30 mt-2">
-          <Text className="text-sm text-text-secondary-dark">
+        <View className="flex-row justify-between items-center pt-3 border-t border-[#e2e8f0] dark:border-borderColor-dark/30 mt-2">
+          <Text className="text-sm text-[#475569] dark:text-text-secondary-dark">
             Page {currentPage} of {totalPages}
           </Text>
           <View className="flex-row gap-2">
             <TouchableOpacity
               onPress={handlePrevPage}
               disabled={currentPage === 1}
-              className={`p-2.5 bg-surface-light-dark border border-borderColor-dark rounded-2xl ${currentPage === 1 ? 'opacity-40' : ''}`}
+              className={`p-2.5 bg-[#f1f5f9] dark:bg-surface-light-dark border border-[#e2e8f0] dark:border-borderColor-dark rounded-2xl ${currentPage === 1 ? 'opacity-40' : ''}`}
             >
               <ChevronLeft color="#94a3b8" size={20} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleNextPage}
               disabled={currentPage === totalPages}
-              className={`p-2.5 bg-surface-light-dark border border-borderColor-dark rounded-2xl ${currentPage === totalPages ? 'opacity-40' : ''}`}
+              className={`p-2.5 bg-[#f1f5f9] dark:bg-surface-light-dark border border-[#e2e8f0] dark:border-borderColor-dark rounded-2xl ${currentPage === totalPages ? 'opacity-40' : ''}`}
             >
               <ChevronRight color="#94a3b8" size={20} />
             </TouchableOpacity>

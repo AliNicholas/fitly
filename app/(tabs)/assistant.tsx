@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,10 +20,20 @@ import { getSettings } from '../../db/settings';
 import { getSessions } from '../../db/sessions';
 import { getCategories, addCategory } from '../../db/categories';
 import { addExercise } from '../../db/exercises';
+import {
+  executeAiProviderCall,
+  getAiProviderOption,
+  getApiKeyForProvider,
+  normalizeAiProvider,
+  type AiChatMessage,
+  type AiFunctionCall,
+  type AiProvider,
+} from '../../utils/aiProviders';
 import { getStableTutorialLink } from '../../utils/tutorialLinks';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Markdown from 'react-native-markdown-display';
+import { useAppTheme } from '../../contexts/ThemeContext';
 
 // Infinitely rotating loader icon
 const SpinningLoader = ({ color = '#8b5cf6', size = 20 }: { color?: string; size?: number }) => {
@@ -137,39 +147,7 @@ const markdownStyles: Record<string, MarkdownStyle> = {
   },
 };
 
-// Markdown styling for user messages
-const userMarkdownStyles: Record<string, MarkdownStyle> = {
-  ...markdownStyles,
-  body: {
-    ...(markdownStyles.body as TextStyle),
-    color: '#ffffff',
-  },
-  strong: {
-    ...(markdownStyles.strong as TextStyle),
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  link: {
-    ...(markdownStyles.link as TextStyle),
-    color: '#ffffff',
-    textDecorationLine: 'underline',
-  },
-};
-
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'model' | 'tool';
-  text?: string;
-  functionCall?: {
-    name: string;
-    args: any;
-  };
-  functionResponse?: {
-    name: string;
-    response: any;
-  };
-  isSystemMessage?: boolean;
-}
+type ChatMessage = AiChatMessage;
 
 interface CategoryMap {
   [id: number]: string;
@@ -178,6 +156,8 @@ interface CategoryMap {
 export default function AssistantScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isDark, colors } = useAppTheme();
+  const [aiProvider, setAiProvider] = useState<AiProvider>('gemini');
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -191,13 +171,82 @@ export default function AssistantScreen() {
   ]);
   const [inputText, setInputText] = useState('');
   const [isAiResponding, setIsAiResponding] = useState(false);
-  const [pendingAction, setPendingAction] = useState<{ name: string; args: any } | null>(null);
+  const [pendingAction, setPendingAction] = useState<AiFunctionCall | null>(null);
   const [categories, setCategories] = useState<CategoryMap>({});
   const [composerHeight, setComposerHeight] = useState(88);
   const [keyboardBottomOffset, setKeyboardBottomOffset] = useState(0);
 
   const flatListRef = useRef<FlatList>(null);
   const { height: windowHeight } = useWindowDimensions();
+  const modelMarkdownStyles = useMemo<Record<string, MarkdownStyle>>(() => {
+    const textColor = colors.textPrimary;
+    const mutedSurface = isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0';
+    const codeSurface = isDark ? 'rgba(0, 0, 0, 0.3)' : '#f1f5f9';
+
+    return {
+      ...markdownStyles,
+      body: {
+        ...(markdownStyles.body as TextStyle),
+        color: textColor,
+      },
+      strong: {
+        ...(markdownStyles.strong as TextStyle),
+        color: textColor,
+      },
+      list_item: {
+        ...(markdownStyles.list_item as TextStyle),
+        color: textColor,
+      },
+      hr: {
+        ...(markdownStyles.hr as ViewStyle),
+        backgroundColor: mutedSurface,
+      },
+      code_inline: {
+        ...(markdownStyles.code_inline as TextStyle),
+        backgroundColor: mutedSurface,
+      },
+      code_block: {
+        ...(markdownStyles.code_block as TextStyle),
+        backgroundColor: codeSurface,
+        color: textColor,
+      },
+      fence: {
+        ...(markdownStyles.fence as TextStyle),
+        backgroundColor: codeSurface,
+        color: textColor,
+      },
+      heading1: {
+        ...(markdownStyles.heading1 as TextStyle),
+        color: textColor,
+      },
+      heading2: {
+        ...(markdownStyles.heading2 as TextStyle),
+        color: textColor,
+      },
+      heading3: {
+        ...(markdownStyles.heading3 as TextStyle),
+        color: textColor,
+      },
+    };
+  }, [colors.textPrimary, isDark]);
+
+  const userMessageMarkdownStyles = useMemo<Record<string, MarkdownStyle>>(() => ({
+    ...modelMarkdownStyles,
+    body: {
+      ...(modelMarkdownStyles.body as TextStyle),
+      color: '#ffffff',
+    },
+    strong: {
+      ...(modelMarkdownStyles.strong as TextStyle),
+      fontWeight: 'bold',
+      color: '#ffffff',
+    },
+    link: {
+      ...(modelMarkdownStyles.link as TextStyle),
+      color: '#ffffff',
+      textDecorationLine: 'underline',
+    },
+  }), [modelMarkdownStyles]);
 
   useEffect(() => {
     const handleKeyboardShow = (event: { endCoordinates: { screenY: number } }) => {
@@ -227,7 +276,9 @@ export default function AssistantScreen() {
   const loadConfig = useCallback(async () => {
     try {
       const data = await getSettings();
-      setApiKey(data.gemini_api_key || null);
+      const provider = normalizeAiProvider(data.api_provider);
+      setAiProvider(provider);
+      setApiKey(getApiKeyForProvider(data, provider) || null);
       
       const cats = await getCategories();
       const mapping: CategoryMap = {};
@@ -257,134 +308,6 @@ export default function AssistantScreen() {
       }, 100);
     }
   }, [messages, pendingAction, isAiResponding]);
-
-  // Construct standard Gemini API payload from ChatMessage history
-  const buildGeminiPayload = (history: ChatMessage[]) => {
-    return history
-      .filter((m) => !m.isSystemMessage) // skip system messages that are just visual confirmations
-      .map((m) => {
-        const parts: any[] = [];
-        if (m.text) {
-          parts.push({ text: m.text });
-        }
-        if (m.functionCall) {
-          parts.push({
-            functionCall: {
-              name: m.functionCall.name,
-              args: m.functionCall.args,
-            },
-          });
-        }
-        if (m.functionResponse) {
-          parts.push({
-            functionResponse: {
-              name: m.functionResponse.name,
-              response: m.functionResponse.response,
-            },
-          });
-        }
-        
-        // Tool role is mapped to "function" in API, otherwise matches role
-        return {
-          role: m.role === 'tool' ? 'function' : m.role,
-          parts,
-        };
-      });
-  };
-
-  // Central Gemini request executor
-  const executeGeminiCall = async (currentHistory: ChatMessage[]): Promise<any> => {
-    if (!apiKey) throw new Error('API key is missing');
-
-    const payloadContents = buildGeminiPayload(currentHistory);
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: payloadContents,
-          systemInstruction: {
-            parts: [
-              {
-                text: `You are Fitly Coach, an elite personal training assistant. 
-
-When communicating, ALWAYS use rich Markdown formatting (bold, italics, headers, list items, code blocks) to make your messages look beautiful and highly engaging.
-
-CRITICAL CAPABILITIES:
-1. Exercise Suggestions & Brainstorming:
-   - If the user asks for exercise suggestions or brainstorming, first call 'get_categories' to see the categories they already have.
-   - Tailor your suggestions to match the existing categories in their database, or suggest new categories if they want to brainstorm.
-   - When suggesting new exercises, you can directly propose adding them using the 'add_exercise' tool.
-   - If you want to suggest a new category, use 'add_category' to propose it.
-   - You can propose both in tandem (e.g., first propose 'add_category', then when they accept/ask, add exercises under it).
-
-2. Enrichment of Exercises (Descriptions & Links):
-   - When calling 'add_exercise', ALWAYS provide a helpful 'description' (proper form, target muscles, step-by-step tips) and an educational/instructional 'link' to enrich the exercise, not just a name.
-   - Do not use direct individual YouTube video URLs because videos may be deleted or unavailable. Prefer stable tutorial/search/reference URLs such as a YouTube results search for the exercise name or a reputable fitness directory page.
-   - Explain why this exercise is beneficial for their fitness goals in your response.
-
-3. Workout History & Analytics:
-   - When the user asks about their progress, history, stats, or workouts, call 'get_sessions' to get authentic database records.
-   - Give highly accurate summaries. Do not make up session numbers or exercises that aren't in the returned data.
-
-Be encouraging, professional, and structured. Do not mention technical terms like "database", "function call", "JSON", or "tool" in your chat responses.`,
-              },
-            ],
-          },
-          tools: [
-            {
-              functionDeclarations: [
-                {
-                  name: 'get_sessions',
-                  description: 'Get the list of all workout sessions and exercises to provide progress summary and insights.',
-                  parameters: { type: 'OBJECT', properties: {} },
-                },
-                {
-                  name: 'add_exercise',
-                  description: 'Propose adding a new exercise with an optional description and instructional or reference link. IMPORTANT: The user will be asked to confirm this. Do not assume it is added until they confirm.',
-                  parameters: {
-                    type: 'OBJECT',
-                    properties: {
-                      name: { type: 'STRING', description: 'Name of the exercise (e.g., "Barbell Bench Press")' },
-                      category_id: { type: 'INTEGER', description: 'ID of the category (must use an existing category ID)' },
-                      description: { type: 'STRING', description: 'Optional explanation of form, muscle target, or how to execute it.' },
-                      link: { type: 'STRING', description: 'Optional instructional video URL or reference link (e.g., YouTube link).' },
-                    },
-                    required: ['name', 'category_id'],
-                  },
-                },
-                {
-                  name: 'get_categories',
-                  description: 'Get the list of all exercise categories.',
-                  parameters: { type: 'OBJECT', properties: {} },
-                },
-                {
-                  name: 'add_category',
-                  description: 'Propose adding a new exercise category. The user must confirm this.',
-                  parameters: {
-                    type: 'OBJECT',
-                    properties: {
-                      name: { type: 'STRING', description: 'Name of the category' },
-                    },
-                    required: ['name'],
-                  },
-                },
-              ],
-            },
-          ],
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API Error: ${response.status} - ${errorText}`);
-    }
-
-    return await response.json();
-  };
 
   const handleSendMessage = async (customText?: string, overrideHistory?: ChatMessage[]) => {
     const textToSend = customText !== undefined ? customText : inputText;
@@ -416,73 +339,63 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
 
       while (keepCalling && iterations < maxIterations) {
         iterations++;
-        const apiResponse = await executeGeminiCall(updatedHistory);
-        const candidate = apiResponse.candidates?.[0];
-        const parts = candidate?.content?.parts;
+        if (!apiKey) {
+          throw new Error(`${getAiProviderOption(aiProvider).label} API key is missing`);
+        }
 
-        if (!parts || parts.length === 0) {
+        const aiResponse = await executeAiProviderCall(aiProvider, apiKey, updatedHistory);
+        const functionCall = aiResponse.functionCall;
+
+        if (!aiResponse.text && !functionCall) {
           throw new Error('Received empty response from AI model.');
         }
 
-        // Search for text parts and function call parts
-        const textPart = parts.find((p: any) => p.text);
-        const functionCallPart = parts.find((p: any) => p.functionCall);
-
         // Group them into a single model message to avoid consecutive roles
-        if (textPart?.text || functionCallPart?.functionCall) {
+        if (aiResponse.text || functionCall) {
           const modelMsg: ChatMessage = {
             id: Math.random().toString(),
             role: 'model',
-            text: textPart?.text || undefined,
-            functionCall: functionCallPart?.functionCall
-              ? {
-                  name: functionCallPart.functionCall.name,
-                  args: functionCallPart.functionCall.args,
-                }
-              : undefined,
+            text: aiResponse.text,
+            functionCall,
           };
           updatedHistory = [...updatedHistory, modelMsg];
           setMessages(updatedHistory);
         }
 
-        // 2. If there's a function call
-        if (functionCallPart?.functionCall) {
-          const call = functionCallPart.functionCall;
-
-          if (call.name === 'get_sessions') {
+        if (functionCall) {
+          if (functionCall.name === 'get_sessions') {
             const sessionsData = await getSessions();
             const toolResponseMsg: ChatMessage = {
               id: Math.random().toString(),
               role: 'tool',
               functionResponse: {
-                name: call.name,
+                id: functionCall.id,
+                name: functionCall.name,
                 response: { sessions: sessionsData },
               },
             };
             updatedHistory = [...updatedHistory, toolResponseMsg];
             setMessages(updatedHistory);
-            // Continue the loop to let Gemini process the sessions database
-          } else if (call.name === 'get_categories') {
+          } else if (functionCall.name === 'get_categories') {
             const categoriesData = await getCategories();
             const toolResponseMsg: ChatMessage = {
               id: Math.random().toString(),
               role: 'tool',
               functionResponse: {
-                name: call.name,
+                id: functionCall.id,
+                name: functionCall.name,
                 response: { categories: categoriesData },
               },
             };
             updatedHistory = [...updatedHistory, toolResponseMsg];
             setMessages(updatedHistory);
-            // Continue the loop to let Gemini process the categories database
-          } else {
+          } else if (functionCall.name === 'add_exercise' || functionCall.name === 'add_category') {
             // It is a WRITE call (add_exercise or add_category)
             // Halt the automatic loop, return the pending action card to user
-            setPendingAction({
-              name: call.name,
-              args: call.args,
-            });
+            setPendingAction(functionCall);
             keepCalling = false;
+          } else {
+            throw new Error(`Unsupported AI action: ${functionCall.name}`);
           }
         } else {
           // No function calls, normal text response complete
@@ -538,6 +451,7 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
       id: Math.random().toString(),
       role: 'tool',
       functionResponse: {
+        id: action.id,
         name: action.name,
         response: success ? { success: true } : { success: false, error: errorMessage },
       },
@@ -571,6 +485,7 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
       id: Math.random().toString(),
       role: 'tool',
       functionResponse: {
+        id: action.id,
         name: action.name,
         response: { success: false, error: 'User cancelled the action' },
       },
@@ -599,8 +514,8 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
     if (item.isSystemMessage) {
       return (
         <View className="flex-row justify-center my-2.5 px-4">
-          <View className="bg-surface-light border border-borderColor-dark/15 px-4 py-2 rounded-2xl">
-            <Text className="text-text-secondary-dark text-sm font-semibold uppercase tracking-wider text-center">
+          <View className="bg-white dark:bg-surface-light-dark border border-[#e2e8f0] dark:border-borderColor-dark/15 px-4 py-2 rounded-2xl">
+            <Text className="text-[#475569] dark:text-text-secondary-dark text-sm font-semibold uppercase tracking-wider text-center">
               {item.text}
             </Text>
           </View>
@@ -617,10 +532,10 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
           className={`max-w-[85%] px-5 py-3.5 rounded-3xl ${
             isUser
               ? 'bg-brand-600 rounded-tr-none'
-              : 'bg-surface-light border border-borderColor-dark/25 rounded-tl-none'
+              : 'bg-white dark:bg-surface-light-dark border border-[#e2e8f0] dark:border-borderColor-dark/25 rounded-tl-none'
           }`}
         >
-          <Markdown style={isUser ? userMarkdownStyles : markdownStyles}>
+          <Markdown style={isUser ? userMessageMarkdownStyles : modelMarkdownStyles}>
             {messageText}
           </Markdown>
         </View>
@@ -630,24 +545,26 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
 
   if (loading) {
     return (
-      <View className="flex-1 bg-[#050510] justify-center items-center">
+      <View className="flex-1 bg-[#f8fafc] dark:bg-[#050510] justify-center items-center">
         <ActivityIndicator size="large" color="#8b5cf6" />
-        <Text className="text-text-secondary-dark font-medium text-base mt-4">Initializing Coach...</Text>
+        <Text className="text-[#475569] dark:text-text-secondary-dark font-medium text-base mt-4">Initializing Coach...</Text>
       </View>
     );
   }
 
-  // Warning screen if Gemini key is missing
+  const activeProviderOption = getAiProviderOption(aiProvider);
+
+  // Warning screen if the selected provider key is missing
   if (!apiKey) {
     return (
-      <View className="flex-1 bg-[#050510] px-6 justify-center items-center">
-        <View className="bg-surface-dark border border-borderColor-dark/40 rounded-3xl p-7 items-center w-full shadow-xl">
+      <View className="flex-1 bg-[#f8fafc] dark:bg-[#050510] px-6 justify-center items-center">
+        <View className="bg-white dark:bg-surface-dark border border-[#e2e8f0] dark:border-borderColor-dark/40 rounded-3xl p-7 items-center w-full shadow-xl">
           <View className="p-5 bg-brand-900/40 border border-brand-500/30 rounded-3xl mb-4">
             <Key color="#a78bfa" size={36} />
           </View>
-          <Text className="text-text-primary-dark font-extrabold text-2xl text-center">API Key Required</Text>
-          <Text className="text-text-secondary-dark text-base text-center mt-2.5 mb-6 leading-6">
-            To chat with your Fitly AI Coach, please configure your Google Gemini API Key in the Settings tab.
+          <Text className="text-[#0f172a] dark:text-text-primary-dark font-extrabold text-2xl text-center">API Key Required</Text>
+          <Text className="text-[#475569] dark:text-text-secondary-dark text-base text-center mt-2.5 mb-6 leading-6">
+            To chat with your Fitly AI Coach, please configure your {activeProviderOption.label} API key in the Settings tab.
           </Text>
           <TouchableOpacity
             onPress={() => router.navigate('/(tabs)/settings' as any)}
@@ -762,9 +679,9 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
             {/* Coach typing status */}
             {isAiResponding && !pendingAction && (
               <View className="flex-row justify-start my-2.5 px-1">
-                <View className="bg-surface-light border border-borderColor-dark/25 px-5 py-3.5 rounded-3xl rounded-tl-none flex-row items-center gap-2">
+                <View className="bg-white dark:bg-surface-light-dark border border-[#e2e8f0] dark:border-borderColor-dark/25 px-5 py-3.5 rounded-3xl rounded-tl-none flex-row items-center gap-2">
                   <SpinningLoader color="#8b5cf6" size={18} />
-                  <Text className="text-text-secondary-dark text-sm font-medium">Coach is thinking...</Text>
+                  <Text className="text-[#475569] dark:text-text-secondary-dark text-sm font-medium">Coach is thinking...</Text>
                 </View>
               </View>
             )}
@@ -776,7 +693,7 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
       <View
         onLayout={(event) => setComposerHeight(event.nativeEvent.layout.height)}
         style={{ bottom: keyboardBottomOffset }}
-        className="absolute left-0 right-0 p-5 border-t border-borderColor-dark/30 bg-[#0a0a1e]"
+        className="absolute left-0 right-0 p-5 border-t border-[#e2e8f0] dark:border-borderColor-dark/30 bg-white dark:bg-[#0a0a1e]"
       >
         <View className="flex-row gap-3.5 items-center w-full">
           <View className="flex-1">
@@ -786,7 +703,7 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
               placeholder="Ask your coach or add an exercise..."
               placeholderTextColor="#475569"
               editable={!isAiResponding && !pendingAction}
-              className="w-full bg-surface-dark border border-borderColor-dark/50 rounded-3xl px-5 py-3.5 text-text-primary-dark text-base max-h-24"
+              className="w-full bg-white dark:bg-surface-dark border border-[#e2e8f0] dark:border-borderColor-dark/50 rounded-3xl px-5 py-3.5 text-[#0f172a] dark:text-text-primary-dark text-base max-h-24"
               multiline={true}
             />
           </View>
@@ -817,7 +734,7 @@ Be encouraging, professional, and structured. Do not mention technical terms lik
   );
 
   return (
-    <View style={{ paddingTop: insets.top }} className="flex-1 bg-[#050510]">
+    <View style={{ paddingTop: insets.top }} className="flex-1 bg-[#f8fafc] dark:bg-[#050510]">
       {chatContent}
     </View>
   );

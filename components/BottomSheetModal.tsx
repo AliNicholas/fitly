@@ -43,7 +43,7 @@ export function BottomSheetModal({ visible, onClose, title, children }: BottomSh
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          className="w-full max-h-[90%] bg-surface-dark border-t border-[#2a2a4a] rounded-t-3xl shadow-2xl flex-col"
+          className="w-full max-h-[90%] bg-white dark:bg-surface-dark border-t border-[#e2e8f0] dark:border-[#2a2a4a] rounded-t-3xl shadow-2xl flex-col"
         >
           <View style={{ paddingBottom: Math.max(insets.bottom, 28) }} className="w-full flex-auto flex-col">
             {/* Header / Drag indicator simulation */}
@@ -52,11 +52,11 @@ export function BottomSheetModal({ visible, onClose, title, children }: BottomSh
             </View>
 
             {/* Header Content */}
-            <View className="flex-row items-center justify-between px-4 pb-3 border-b border-[#2a2a4a]/20">
-              <Text className="text-text-primary-dark font-bold text-xl">{title}</Text>
+            <View className="flex-row items-center justify-between px-4 pb-3 border-b border-[#e2e8f0] dark:border-[#2a2a4a]/20">
+              <Text className="text-[#0f172a] dark:text-text-primary-dark font-bold text-xl">{title}</Text>
               <TouchableOpacity
                 onPress={handleClose}
-                className="p-1 bg-surface-light-dark border border-[#2a2a4a] rounded-full"
+                className="p-1 bg-[#f1f5f9] dark:bg-surface-light-dark border border-[#e2e8f0] dark:border-[#2a2a4a] rounded-full"
               >
                 <X color="#94a3b8" size={20} />
               </TouchableOpacity>

@@ -19,12 +19,14 @@
 ### Prerequisites
 
 Ensure you have the following installed on your machine:
+
 - [Node.js](https://nodejs.org/) (LTS version recommended)
 - [Expo Go](https://expo.dev/go) app installed on your physical mobile device, or configured iOS Simulator / Android Emulator.
 
 ### Installation
 
 1. Clone the repository and navigate to the project directory:
+
    ```bash
    cd fitly
    ```
@@ -71,38 +73,45 @@ npx expo start --tunnel
 We use **EAS (Expo Application Services)** to compile, build, and distribute binaries in the cloud without needing a local macOS machine or complex Android Studio setups.
 
 ### 1. Install EAS CLI
+
 Install the official EAS command-line tool globally:
+
 ```bash
 npm install -g eas-cli
 ```
 
 ### 2. Log in to Expo Account
+
 Log in to your Expo developer account. If you don't have one, register at [expo.dev](https://expo.dev):
+
 ```bash
 eas login
 ```
 
 ### 3. Initialize EAS Configuration
+
 Configure the project for EAS Build. This command will prompt you to choose platforms and automatically generate an `eas.json` configuration file:
+
 ```bash
 eas build:configure
 ```
 
 ### 4. Trigger a Cloud Build
+
 You can build for Android, iOS, or both platforms simultaneously using Expo's cloud build servers:
 
-*   **Build for Android:**
-    ```bash
-    eas build --platform android
-    ```
-*   **Build for iOS:**
-    ```bash
-    eas build --platform ios
-    ```
-*   **Build for both platforms:**
-    ```bash
-    eas build --platform all
-    ```
+- **Build for Android:**
+  ```bash
+  eas build --platform android
+  ```
+- **Build for iOS:**
+  ```bash
+  eas build --platform ios
+  ```
+- **Build for both platforms:**
+  ```bash
+  eas build --platform all
+  ```
 
 You will receive a build monitoring URL where you can view build logs in real-time. Once the build completes, EAS will provide a downloadable APK/AAB for Android or a simulator/adhoc build for iOS!
 
@@ -112,9 +121,14 @@ You will receive a build monitoring URL where you can view build logs in real-ti
 
 Data is stored locally on-device using SQLite.
 The database files are managed in the `db/` folder:
+
 - **`database.ts`**: Database initialization, schema creation, and migration scripts.
 - **`categories.ts`**: Operations for exercise categories.
 - **`exercises.ts`**: Managing the exercise library.
 - **`sessions.ts`**: Workout tracking, logging sets, reps, and sessions.
 - **`settings.ts`**: User preferences and AI configuration.
 - **`stats.ts`**: Tracking charts, metrics, and progress.
+
+eas build --profile development --platform android
+eas build --platform android --profile production
+eas build --platform android --profile preview
