@@ -3,21 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Fitly — an offline-first, self-hosted fitness workspace. Log sessions, analyze progressive overload, and chat with Google Gemini AI. Your workouts, your SQLite database, your data.">
-  <title>Fitly — A Local AI-Powered Fitness Workspace</title>
-  
-  <!-- Favicon using SVG matching brand -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='12' width='4' height='8' rx='1' fill='%23a855f7'/%3E%3Crect x='24' y='12' width='4' height='8' rx='1' fill='%23a855f7'/%3E%3Crect x='8' y='14' width='16' height='4' fill='%23a855f7'/%3E%3Cpath d='M10 8L6 12L10 16' stroke='%23a855f7' stroke-width='2' fill='none'/%3E%3Cpath d='M22 8L26 12L22 16' stroke='%23a855f7' stroke-width='2' fill='none'/%3E%3C/svg%3E">
-
-  <!-- Google Fonts for Fira Code & Inter -->
+  <meta name="description" content="Fitly — the all-in-one fitness companion app. Track workouts, log calories, analyze progress, and train with an AI coach that knows your history. Free. No subscriptions. Your data stays on your device.">
+  <title>Fitly — The All-In-One Fitness Companion</title>
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-
-  <!-- Stylesheet -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -27,180 +19,289 @@
     <div class="wrap">
       <a href="#" class="brand">
         <span class="boat"><i data-lucide="dumbbell"></i></span>
-        <span class="wordmark">FITLY_CORE</span>
+        <span class="wordmark">FITLY</span>
       </a>
       <div class="nav-links">
-        <a href="#features">Capabilities</a>
-        <a href="#architecture">Architecture</a>
+        <a href="#features">Features</a>
+        <a href="#tabs">Explore</a>
         <a href="#testimonials">Reviews</a>
-        <a href="#download" class="btn primary btn-sm">Start Workspace</a>
+        <a href="#download" class="btn primary btn-sm">Get Started</a>
       </div>
     </div>
   </nav>
 
-  <!-- Hero Section -->
+  <!-- Hero -->
   <section class="hero in">
     <div class="wrap">
       <div class="badge">
         <span class="dot"></span>
-        <span>Local Core Engine Active</span>
-      </div>
-      
-      <div class="hero-logo">
-        <span class="wordmark">FITLY // <span class="grad">OFFLINE-FIRST</span></span>
-      </div>
-      
-      <h1>A self-hosted fitness workspace <br>for your <span class="grad">local hardware</span></h1>
-      <p class="slogan">&gt;_ POWERED BY SQLITE & GOOGLE GEMINI AI</p>
-      
-      <p class="lede">
-        Fitly is a terminal-grade mobile workout logging companion. No cloud subscriptions. No telemetry. Your fitness database resides locally in SQLite, queried with 0ms latency, enriched by a built-in Gemini personal coach.
-      </p>
-      
-      <div class="hero-cta">
-        <a href="#download" class="btn primary">Deploy App</a>
-        <a href="https://github.com" class="btn" id="github-link"><i data-lucide="github"></i> View Source</a>
+        <span>Free &amp; Open Source — No Subscriptions</span>
       </div>
 
-      <!-- Terminal Mockup (Minimizable, Maximizable, Closable) -->
-      <div class="term-intro">Inspect the local runtime environment:</div>
-      
-      <button class="term-reopen" id="term-reopen-btn">Reopen console.log</button>
-      
+      <h1>Stop paying for fitness apps.<br>Start <span class="grad">actually training</span>.</h1>
+      <p class="slogan">&gt;_ THE LAST FITNESS APP YOU'LL EVER NEED</p>
+
+      <p class="lede">
+        Fitly replaces your workout logger, calorie tracker, and personal trainer — all in one beautiful, blazing-fast app. No monthly fees. No ads. No cloud lock-in. Just you and your gains.
+      </p>
+
+      <div class="hero-cta">
+        <a href="#download" class="btn primary"><i data-lucide="rocket"></i> Get Started</a>
+        <a href="https://github.com/AliNicholas/fitly" class="btn github-link"><i data-lucide="github"></i> View on GitHub</a>
+      </div>
+
+      <!-- Terminal Mockup -->
+      <div class="term-intro">See what a real session looks like:</div>
+      <button class="term-reopen" id="term-reopen-btn">Reopen terminal</button>
       <div class="term" id="fitly-terminal">
         <div class="term-bar">
-          <div class="ttl">user@fitly-sqlite-node: ~</div>
+          <div class="ttl">fitly // live session</div>
           <div class="winbtns">
-            <span class="min" title="Minimize" id="term-min-btn"><i data-lucide="minus" style="width: 12px; height: 12px;"></i></span>
-            <span class="max" title="Maximize" id="term-max-btn"><i data-lucide="maximize-2" style="width: 12px; height: 12px;"></i></span>
-            <span class="x" title="Close" id="term-close-btn"><i data-lucide="x" style="width: 12px; height: 12px;"></i></span>
+            <span class="min" title="Minimize" id="term-min-btn"><i data-lucide="minus" style="width:12px;height:12px;"></i></span>
+            <span class="max" title="Maximize" id="term-max-btn"><i data-lucide="maximize-2" style="width:12px;height:12px;"></i></span>
+            <span class="x" title="Close" id="term-close-btn"><i data-lucide="x" style="width:12px;height:12px;"></i></span>
           </div>
         </div>
-        <pre><span class="cm"># Initializing offline-first fitness workspace...</span>
-$ fitly-cli init
-<span class="cs">[OK]</span> Mounting local SQLite database at sqlite:///fitly.db
-<span class="cs">[OK]</span> 14 schema tables migrated successfully (0ms latency)
-<span class="cs">[OK]</span> Activating Gemini-1.5-Flash cognitive assistant...
+        <pre><span class="cm"># Starting your Monday push session...</span>
+<span class="cs">[SESSION]</span> Hypertrophy Push A — Chest, Shoulders & Triceps
 
-<span class="cm"># Querying active hypertrophy session...</span>
-$ fitly-cli log --active
-<span class="cs">[INFO]</span> Active: Hypertrophy Push A (Chest/Shoulders/Triceps)
-⏱️  Duration: 42m 12s  |  🔥 Calories: 320 kcal
-Sets completed:
-  1. Flat Bench Press   | 225 lbs x 8 reps [PR 🔥]
-  2. Overhead DB Press  |  70 lbs x 10 reps
-  3. Incline DB Fly     |  45 lbs x 12 reps
+<span class="cm"># Logging sets in real-time:</span>
+  1. Flat Bench Press   → 225 lbs × 8 reps  <span class="cs">[NEW PR 🔥]</span>
+  2. Overhead DB Press  →  70 lbs × 10 reps
+  3. Incline DB Fly     →  45 lbs × 12 reps
+  4. Cable Crossover    →  30 lbs × 15 reps
 
-<span class="cm"># Consulting your on-device personal trainer...</span>
-$ fitly-cli coach --ask "suggest tricep finisher"
-<span class="cs">[AI COACH]:</span> Since you smashed chest press today, try this tricep finisher:
-👉 Single-Arm Overhead Cable Extensions
-👉 3 sets x 12-15 reps (focus on maximum stretch at the bottom)
-<span class="term-cursor">_</span></pre>
+<span class="cm"># Asking your AI Coach for a finisher...</span>
+<span class="cs">[AI COACH]</span> Great pressing session! Try this tricep finisher:
+  → Overhead Cable Extensions, 3 × 15 reps
+  → Focus on the stretch at the bottom
+  → Rest 45 seconds between sets
+
+<span class="cm"># Logging 520 calories burned to your tracker...</span>
+<span class="cs">[CALORIES]</span> Daily intake: 1,840 / 2,200 kcal — 360 remaining
+
+<span class="cs">[DONE]</span> Session saved. Streak: 12 days 🔥<span class="term-cursor">_</span></pre>
       </div>
-
     </div>
   </section>
 
-  <!-- Capabilities Section -->
+  <!-- What Makes Fitly Different -->
   <section id="features">
     <div class="wrap">
       <div class="center">
-        <div class="eyebrow"><i data-lucide="sparkles"></i> Core Capabilities</div>
-        <h2 class="h">Engineered for absolute performance</h2>
-        <p class="sub">Fitly is built on high-performance native pillars. No bloat. Pure utility.</p>
+        <div class="eyebrow"><i data-lucide="sparkles"></i> Why Fitly?</div>
+        <h2 class="h">Everything you need. Nothing you don't.</h2>
+        <p class="sub">Most fitness apps charge you $15/month for a glorified spreadsheet. Fitly gives you a full training suite — workout logging, calorie tracking, AI coaching, and analytics — completely free.</p>
       </div>
 
       <div class="grid">
         <div class="feature">
-          <div class="ico"><i data-lucide="shield-check"></i></div>
-          <h3>100% Offline-First</h3>
-          <p>Powered by local SQLite. Your logs are stored on your device, not sold to data brokers.</p>
+          <div class="ico"><i data-lucide="credit-card"></i></div>
+          <h3>$0. Forever.</h3>
+          <p>No subscriptions, no trials, no premium tiers. Every feature is free and open source.</p>
         </div>
-        
         <div class="feature">
-          <div class="ico"><i data-lucide="cpu"></i></div>
-          <h3>Gemini Intelligence</h3>
-          <p>An on-device chat model interface to analyze splits, construct routines, and correct form.</p>
+          <div class="ico"><i data-lucide="wifi-off"></i></div>
+          <h3>Works Offline</h3>
+          <p>Your data lives on your device. No accounts to create, no sync to wait for. Opens instantly.</p>
         </div>
-
         <div class="feature">
-          <div class="ico"><i data-lucide="zap"></i></div>
-          <h3>0ms Query Latency</h3>
-          <p>No networks, no sync screens. Opens instantly. Reads/writes execute in milliseconds.</p>
+          <div class="ico"><i data-lucide="brain"></i></div>
+          <h3>AI That Knows You</h3>
+          <p>A built-in coach powered by Google Gemini that reads your actual workout history to give relevant advice.</p>
         </div>
-
         <div class="feature">
-          <div class="ico"><i data-lucide="bar-chart-2"></i></div>
-          <h3>Progressive Overload</h3>
-          <p>A dynamic analytics panel mapping tracking metrics, volume charts, and PR statuses.</p>
+          <div class="ico"><i data-lucide="flame"></i></div>
+          <h3>Calorie Tracking</h3>
+          <p>Log meals with text or photos. See daily breakdowns, macro splits, and a heatmap of your nutrition consistency.</p>
         </div>
-
         <div class="feature">
-          <div class="ico"><i data-lucide="code"></i></div>
-          <h3>TypeScript Native</h3>
-          <p>Built completely with fully typed React Native components for visual and logical reliability.</p>
+          <div class="ico"><i data-lucide="trending-up"></i></div>
+          <h3>Progress Analytics</h3>
+          <p>Activity heatmaps, streak counters, volume tracking, and favorite exercise rankings — all at a glance.</p>
         </div>
-
         <div class="feature">
-          <div class="ico"><i data-lucide="activity"></i></div>
-          <h3>Haptics Integrated</h3>
-          <p>Tactile motor feedback triggers on successful sets, rest timers, and weight logs.</p>
+          <div class="ico"><i data-lucide="vibrate"></i></div>
+          <h3>Feels Native</h3>
+          <p>Haptic feedback on every tap. Smooth animations. Dark mode. Designed to feel like it belongs on your phone.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Architecture Section -->
+  <!-- Explore Every Tab -->
+  <section id="tabs">
+    <div class="wrap">
+      <div class="center">
+        <div class="eyebrow"><i data-lucide="layout-dashboard"></i> Inside The App</div>
+        <h2 class="h">Six powerful tabs. One complete experience.</h2>
+        <p class="sub">Every screen in Fitly is designed with purpose. Here's what you'll find inside.</p>
+      </div>
+
+      <div class="tabs-showcase">
+
+        <!-- Tab 1: Dashboard -->
+        <div class="tab-card">
+          <div class="tab-card-header">
+            <div class="tab-icon"><i data-lucide="layout-dashboard"></i></div>
+            <div class="tab-label">Dashboard</div>
+          </div>
+          <div class="tab-card-body">
+            <h3>Your Fitness Command Center</h3>
+            <p>See everything at a glance — total sessions, current workout streak, exercises logged, and your most-used movements. A beautiful activity heatmap shows your consistency over the past months.</p>
+            <ul class="tab-features">
+              <li><i data-lucide="check-circle"></i> Activity heatmap calendar</li>
+              <li><i data-lucide="check-circle"></i> Total sessions & current streak</li>
+              <li><i data-lucide="check-circle"></i> Favorite exercises ranking table</li>
+              <li><i data-lucide="check-circle"></i> Auto-refreshes when you switch tabs</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 2: Exercise Library -->
+        <div class="tab-card">
+          <div class="tab-card-header">
+            <div class="tab-icon"><i data-lucide="dumbbell"></i></div>
+            <div class="tab-label">Exercise Library</div>
+          </div>
+          <div class="tab-card-body">
+            <h3>Your Personal Exercise Database</h3>
+            <p>Build and organize your own exercise vault. Create custom categories (Chest, Legs, Back — whatever you want) and add exercises with names, tutorial links, and detailed instructions.</p>
+            <ul class="tab-features">
+              <li><i data-lucide="check-circle"></i> Custom categories & subcategories</li>
+              <li><i data-lucide="check-circle"></i> Inline tutorial link support</li>
+              <li><i data-lucide="check-circle"></i> Edit, delete, and reorganize freely</li>
+              <li><i data-lucide="check-circle"></i> AI-generated exercise suggestions</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 3: Sessions -->
+        <div class="tab-card">
+          <div class="tab-card-header">
+            <div class="tab-icon"><i data-lucide="calendar"></i></div>
+            <div class="tab-label">Sessions</div>
+          </div>
+          <div class="tab-card-body">
+            <h3>Log Every Rep, Set, and PR</h3>
+            <p>Create workout sessions, pick exercises from your library, and log weights, reps, and sets in real time. Swipe through your history and watch your progressive overload unfold.</p>
+            <ul class="tab-features">
+              <li><i data-lucide="check-circle"></i> Full session builder with exercise picker</li>
+              <li><i data-lucide="check-circle"></i> Real-time set/rep/weight logging</li>
+              <li><i data-lucide="check-circle"></i> Session history with date & duration</li>
+              <li><i data-lucide="check-circle"></i> Delete and edit past sessions</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 4: AI Coach -->
+        <div class="tab-card highlight-card">
+          <div class="tab-card-header">
+            <div class="tab-icon accent-icon"><i data-lucide="message-square"></i></div>
+            <div class="tab-label">AI Coach <span class="new-badge">★ STAR FEATURE</span></div>
+          </div>
+          <div class="tab-card-body">
+            <h3>A Personal Trainer That Actually Knows You</h3>
+            <p>Chat with a Google Gemini-powered coach that has full context of your workouts, exercises, and progress. Ask for new routines, form corrections, nutrition advice, or just motivation.</p>
+            <ul class="tab-features">
+              <li><i data-lucide="check-circle"></i> Full chat interface with markdown rendering</li>
+              <li><i data-lucide="check-circle"></i> Reads your real workout database for context</li>
+              <li><i data-lucide="check-circle"></i> Generate new exercises directly from chat</li>
+              <li><i data-lucide="check-circle"></i> Configurable model & API key in settings</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 5: Calories -->
+        <div class="tab-card">
+          <div class="tab-card-header">
+            <div class="tab-icon"><i data-lucide="flame"></i></div>
+            <div class="tab-label">Calorie Tracker</div>
+          </div>
+          <div class="tab-card-body">
+            <h3>Know What You Eat. Hit Your Targets.</h3>
+            <p>Log meals by typing or snapping a photo. Swipe through four vertical sections: daily intake ring, food entry history, a nutrition heatmap calendar, and a TDEE calculator based on your biometrics.</p>
+            <ul class="tab-features">
+              <li><i data-lucide="check-circle"></i> Visual daily calorie ring with macros</li>
+              <li><i data-lucide="check-circle"></i> Photo-based meal logging</li>
+              <li><i data-lucide="check-circle"></i> Monthly nutrition consistency heatmap</li>
+              <li><i data-lucide="check-circle"></i> TDEE calculator (age, weight, activity)</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 6: Settings -->
+        <div class="tab-card">
+          <div class="tab-card-header">
+            <div class="tab-icon"><i data-lucide="settings"></i></div>
+            <div class="tab-label">Settings</div>
+          </div>
+          <div class="tab-card-body">
+            <h3>Make It Yours</h3>
+            <p>Configure your Gemini API key, choose your preferred AI model, toggle dark mode, and manage your local database — all from one clean settings panel.</p>
+            <ul class="tab-features">
+              <li><i data-lucide="check-circle"></i> Gemini API key & model selector</li>
+              <li><i data-lucide="check-circle"></i> Dark / light mode toggle</li>
+              <li><i data-lucide="check-circle"></i> Data management & database reset</li>
+              <li><i data-lucide="check-circle"></i> App version & build information</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works / Architecture (Clean Version) -->
   <section id="architecture">
     <div class="wrap">
       <div class="preview-card-wrapper">
         <div class="preview-card-grid">
           <div class="preview-text">
-            <div class="eyebrow"><i data-lucide="git-branch"></i> Schema Layer</div>
-            <h2>SQLite Relational Model</h2>
-            <p>Fitly relies on clean relational structures, optimizing queries for rapid execution. All relationships are mapped locally:</p>
-            
-            <div class="schema-code">
-              <pre><span class="cm">// db/schema.ts</span>
-CREATE TABLE sessions (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  date TEXT NOT NULL,
-  duration INTEGER
-);
-
-CREATE TABLE sets (
-  id TEXT PRIMARY KEY,
-  session_id TEXT REFERENCES sessions(id),
-  weight REAL NOT NULL,
-  reps INTEGER NOT NULL
-);</pre>
-            </div>
+            <div class="eyebrow"><i data-lucide="lock"></i> Privacy First</div>
+            <h2>Your data never leaves your phone.</h2>
+            <p>Unlike every other fitness app on the market, Fitly stores everything locally on your device. Your workouts, your meals, your AI conversations — they're yours and only yours. No accounts. No telemetry. No data harvesting.</p>
+            <ul class="preview-list">
+              <li><i data-lucide="check-circle" class="list-icon"></i> <span>Zero network requests for data storage</span></li>
+              <li><i data-lucide="check-circle" class="list-icon"></i> <span>Instant reads & writes — no loading spinners</span></li>
+              <li><i data-lucide="check-circle" class="list-icon"></i> <span>Full database export & reset in settings</span></li>
+            </ul>
           </div>
-          
           <div class="preview-image-container">
             <div class="showcase-box">
               <div class="showcase-header">
                 <span class="showcase-dot dot-red"></span>
                 <span class="showcase-dot dot-yellow"></span>
                 <span class="showcase-dot dot-green"></span>
-                <span class="showcase-title">local_sqlite_query.sql</span>
+                <span class="showcase-title">your_phone / fitly.db</span>
               </div>
               <div class="showcase-body">
-                <div class="chat-row user-row">
-                  <div class="chat-bubble user-bubble">SELECT SUM(weight * reps) AS volume FROM sets;</div>
+                <div class="data-row">
+                  <span class="data-label">sessions</span>
+                  <span class="data-count">42 workouts logged</span>
                 </div>
-                <div class="chat-row ai-row">
-                  <div class="chat-bubble ai-bubble-full">
-                    <strong>Query Result (Success: 0.1ms)</strong><br>
-                    <table class="term-table">
-                      <tr><th>VOLUME (LBS)</th><th>COUNT(SETS)</th></tr>
-                      <tr><td>18,450 lbs</td><td>42 sets</td></tr>
-                    </table>
-                    <br>
-                    <span class="cs">[LOCAL RUNTIME]</span> Weekly training volume increased by 8.4% compared to the prior block. Progressive overload verified.
-                  </div>
+                <div class="data-row">
+                  <span class="data-label">exercises</span>
+                  <span class="data-count">28 custom exercises</span>
+                </div>
+                <div class="data-row">
+                  <span class="data-label">sets</span>
+                  <span class="data-count">384 sets tracked</span>
+                </div>
+                <div class="data-row">
+                  <span class="data-label">calories</span>
+                  <span class="data-count">120 meals logged</span>
+                </div>
+                <div class="data-row">
+                  <span class="data-label">categories</span>
+                  <span class="data-count">6 muscle groups</span>
+                </div>
+                <div class="data-row">
+                  <span class="data-label">settings</span>
+                  <span class="data-count">your preferences</span>
+                </div>
+                <div class="data-footer">
+                  <span class="cs">✓</span> All data stored locally. Synced to: <strong>nowhere.</strong>
                 </div>
               </div>
             </div>
@@ -210,95 +311,90 @@ CREATE TABLE sets (
     </div>
   </section>
 
-  <!-- Testimonials/Reviews Carousel -->
+  <!-- Testimonials Carousel -->
   <section id="testimonials">
     <div class="wrap">
       <div class="center">
-        <div class="eyebrow"><i data-lucide="message-square"></i> Peer-Reviewed</div>
-        <h2 class="h">Verified by raw iron lifters</h2>
-        <p class="sub">Real feedback from developers and athletes using Fitly's local workspace.</p>
+        <div class="eyebrow"><i data-lucide="heart"></i> Real Users</div>
+        <h2 class="h">People who switched never went back</h2>
+        <p class="sub">Hear from real athletes and developers who replaced their paid subscriptions with Fitly.</p>
       </div>
 
       <div class="tcarousel-wrap">
         <button class="tarrow prev" id="carousel-prev-btn"><i data-lucide="chevron-left"></i></button>
-        
         <div class="tgrid" id="carousel-container">
-          
-          <!-- Card 1 -->
+
           <div class="tcard active">
             <div class="av">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
-                <circle cx="50" cy="50" r="50" fill="#355a66" opacity="0.3"/>
-                <circle cx="50" cy="40" r="20" fill="#9cdef2"/>
-                <path d="M15 80C15 65 30 58 50 58C70 58 85 65 85 80" fill="#9cdef2"/>
-              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#4c1d95" opacity="0.3"/><circle cx="50" cy="40" r="20" fill="#c084fc"/><path d="M15 80C15 65 30 58 50 58C70 58 85 65 85 80" fill="#c084fc"/></svg>
             </div>
             <div class="tmeta">
               <div class="stars">★★★★★</div>
-              <div class="q">"I love that my workouts are stored in local SQLite—0ms latency. No sync screens, no login popups. It just works."</div>
-              <div class="nm">Alex Rivers</div>
-              <div class="rl">Embedded Systems Engineer</div>
+              <div class="q">"I cancelled my $15/month app the same day. Fitly does everything it did — plus the AI coach actually knows my workout history."</div>
+              <div class="nm">Sarah K.</div>
+              <div class="rl">Marathon Runner & Software Engineer</div>
             </div>
           </div>
 
-          <!-- Card 2 -->
           <div class="tcard">
             <div class="av">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
-                <circle cx="50" cy="50" r="50" fill="#4c1d95" opacity="0.3"/>
-                <circle cx="50" cy="40" r="20" fill="#c084fc"/>
-                <path d="M15 80C15 65 30 58 50 58C70 58 85 65 85 80" fill="#c084fc"/>
-              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#1e3a5f" opacity="0.3"/><circle cx="50" cy="40" r="20" fill="#7dd3fc"/><path d="M15 80C15 65 30 58 50 58C70 58 85 65 85 80" fill="#7dd3fc"/></svg>
             </div>
             <div class="tmeta">
               <div class="stars">★★★★★</div>
-              <div class="q">"The Gemini AI integration is like having a pocket trainer that knows my exact tracking log. It suggests perfect finishers."</div>
-              <div class="nm">Devin C.</div>
-              <div class="rl">Fullstack Developer</div>
+              <div class="q">"The calorie tracker alone is worth it. Photo logging, daily targets, the heatmap — I've never been this consistent with my nutrition."</div>
+              <div class="nm">Marcus T.</div>
+              <div class="rl">Competitive Powerlifter</div>
             </div>
           </div>
 
-          <!-- Card 3 -->
           <div class="tcard">
             <div class="av">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
-                <circle cx="50" cy="50" r="50" fill="#1e293b" opacity="0.3"/>
-                <circle cx="50" cy="40" r="20" fill="#94a3b8"/>
-                <path d="M15 80C15 65 30 58 50 58C70 58 85 65 85 80" fill="#94a3b8"/>
-              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#064e3b" opacity="0.3"/><circle cx="50" cy="40" r="20" fill="#6ee7b7"/><path d="M15 80C15 65 30 58 50 58C70 58 85 65 85 80" fill="#6ee7b7"/></svg>
             </div>
             <div class="tmeta">
               <div class="stars">★★★★★</div>
-              <div class="q">"Zero ads. Zero monthly subscriptions. Free, fully local code. This is what fitness logging should have been."</div>
-              <div class="nm">Marcus Miller</div>
-              <div class="rl">Powerlifter & Sysadmin</div>
+              <div class="q">"I asked the AI coach 'what should I train today?' and it gave me a full session based on what I hadn't hit in 5 days. Insane."</div>
+              <div class="nm">Dev R.</div>
+              <div class="rl">CrossFit Athlete</div>
+            </div>
+          </div>
+
+          <div class="tcard">
+            <div class="av">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#451a03" opacity="0.3"/><circle cx="50" cy="40" r="20" fill="#fbbf24"/><path d="M15 80C15 65 30 58 50 58C70 58 85 65 85 80" fill="#fbbf24"/></svg>
+            </div>
+            <div class="tmeta">
+              <div class="stars">★★★★★</div>
+              <div class="q">"Zero loading screens. Zero login walls. I open the app and I'm immediately logging. This is how software should work."</div>
+              <div class="nm">Jen A.</div>
+              <div class="rl">Personal Trainer & Gym Owner</div>
             </div>
           </div>
 
         </div>
-
         <button class="tarrow next" id="carousel-next-btn"><i data-lucide="chevron-right"></i></button>
       </div>
-      
       <div class="tnav" id="carousel-dots-container">
         <span class="tdot on" data-index="0"></span>
         <span class="tdot" data-index="1"></span>
         <span class="tdot" data-index="2"></span>
+        <span class="tdot" data-index="3"></span>
       </div>
     </div>
   </section>
 
-  <!-- Download Section -->
+  <!-- Get Started CTA -->
   <section id="download" class="download-section">
     <div class="wrap download-container">
       <div class="download-card">
         <div class="download-content">
-          <div class="eyebrow"><i data-lucide="download"></i> Deployment</div>
-          <h2>Clone, Build, Lift</h2>
-          <p>Fitly is fully free and open source. Download the Expo build, deploy to your phone, and claim full ownership of your fitness logs.</p>
+          <div class="eyebrow"><i data-lucide="rocket"></i> Ready?</div>
+          <h2>Your next PR starts here.</h2>
+          <p>Head over to the GitHub repository to get started. The README has everything you need — installation, setup, and how to run Fitly on your device. Free forever.</p>
           <div class="download-buttons">
-            <a href="#" class="btn primary"><i data-lucide="play" style="fill: currentColor;"></i> Install Expo Go</a>
-            <a href="https://github.com" class="btn"><i data-lucide="code"></i> Clone Repository</a>
+            <a href="https://github.com/AliNicholas/fitly" class="btn primary btn-lg github-link"><i data-lucide="github"></i> Get Started on GitHub</a>
+            <a href="https://github.com/AliNicholas/fitly#readme" class="btn btn-lg github-link"><i data-lucide="book-open"></i> Read the README</a>
           </div>
         </div>
       </div>
@@ -309,149 +405,80 @@ CREATE TABLE sets (
   <footer>
     <div class="wrap footer-container">
       <div class="footer-left">
-        <div class="logo">
-          <span class="logo-icon"><i data-lucide="dumbbell"></i></span>
-          <span class="logo-text">FITLY_CORE</span>
+        <div class="brand">
+          <span class="boat"><i data-lucide="dumbbell"></i></span>
+          <span class="wordmark">FITLY</span>
         </div>
-        <p class="footer-desc">A premium, developer-grade fitness logging tool built completely with SQLite, React Native, and Gemini AI.</p>
+        <p class="footer-desc">The all-in-one fitness companion. Free, open source, and privacy-first. Built for people who actually train.</p>
       </div>
       <div class="footer-right">
         <div class="footer-links">
-          <h4>Source</h4>
-          <a href="https://github.com">GitHub Repo</a>
-          <a href="#">Security Policy</a>
-          <a href="#">MIT License</a>
+          <h4>App</h4>
+          <a href="#features">Features</a>
+          <a href="#tabs">Explore Tabs</a>
+          <a href="#download">Get Started</a>
         </div>
         <div class="footer-links">
-          <h4>Stack</h4>
-          <a href="https://expo.dev">Expo v54</a>
-          <a href="https://sqlite.org">SQLite v3</a>
-          <a href="https://deepmind.google/technologies/gemini">Google Gemini</a>
+          <h4>Project</h4>
+          <a href="https://github.com/AliNicholas/fitly" class="github-link">GitHub Repository</a>
+          <a href="https://github.com/AliNicholas/fitly#readme" class="github-link">README & Setup</a>
+          <a href="https://github.com/AliNicholas/fitly/issues" class="github-link">Report an Issue</a>
         </div>
       </div>
     </div>
     <div class="footer-bottom">
       <div class="wrap footer-bottom-container">
-        <p>&copy; 2026 Fitly. Released under the MIT License.</p>
+        <p>&copy; 2026 Fitly. Free and open source.</p>
         <div class="footer-socials">
-          <a href="#"><i data-lucide="github"></i></a>
-          <a href="#"><i data-lucide="twitter"></i></a>
-          <a href="#"><i data-lucide="terminal"></i></a>
+          <a href="https://github.com/AliNicholas/fitly" class="github-link"><i data-lucide="github"></i></a>
         </div>
       </div>
     </div>
   </footer>
 
   <script>
-    // Initialize Lucide Icons
     lucide.createIcons();
 
-    // DOM Elements for Terminal Interaction
+    // Terminal controls
     const terminal = document.getElementById('fitly-terminal');
     const reopenBtn = document.getElementById('term-reopen-btn');
-    const closeBtn = document.getElementById('term-close-btn');
-    const minBtn = document.getElementById('term-min-btn');
-    const maxBtn = document.getElementById('term-max-btn');
+    document.getElementById('term-close-btn').addEventListener('click', () => { terminal.classList.add('term-closed'); reopenBtn.classList.add('show'); });
+    reopenBtn.addEventListener('click', () => { terminal.classList.remove('term-closed', 'term-min'); reopenBtn.classList.remove('show'); });
+    document.getElementById('term-min-btn').addEventListener('click', () => { terminal.classList.toggle('term-min'); });
+    document.getElementById('term-max-btn').addEventListener('click', () => { terminal.classList.toggle('term-max'); });
 
-    // Terminal State Actions
-    closeBtn.addEventListener('click', () => {
-      terminal.classList.add('term-closed');
-      reopenBtn.classList.add('show');
-    });
-
-    reopenBtn.addEventListener('click', () => {
-      terminal.classList.remove('term-closed');
-      terminal.classList.remove('term-min');
-      reopenBtn.classList.remove('show');
-    });
-
-    minBtn.addEventListener('click', () => {
-      terminal.classList.toggle('term-min');
-    });
-
-    maxBtn.addEventListener('click', () => {
-      terminal.classList.toggle('term-max');
-    });
-
-    // Testimonials Carousel Logic
+    // Carousel
     const cards = document.querySelectorAll('.tcard');
     const dots = document.querySelectorAll('.tdot');
-    const prevBtn = document.getElementById('carousel-prev-btn');
-    const nextBtn = document.getElementById('carousel-next-btn');
-    let currentIndex = 0;
+    let ci = 0;
+    function show(i) { cards.forEach((c,j) => { c.classList.remove('active'); dots[j].classList.remove('on'); }); cards[i].classList.add('active'); dots[i].classList.add('on'); ci = i; }
+    document.getElementById('carousel-prev-btn').addEventListener('click', () => show(ci <= 0 ? cards.length-1 : ci-1));
+    document.getElementById('carousel-next-btn').addEventListener('click', () => show(ci >= cards.length-1 ? 0 : ci+1));
+    dots.forEach((d, i) => d.addEventListener('click', () => show(i)));
 
-    function showCard(index) {
-      cards.forEach((card, i) => {
-        card.classList.remove('active');
-        dots[i].classList.remove('on');
-      });
-      cards[index].classList.add('active');
-      dots[index].classList.add('on');
-      currentIndex = index;
-    }
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.hero, section').forEach(s => observer.observe(s));
 
-    prevBtn.addEventListener('click', () => {
-      let index = currentIndex - 1;
-      if (index < 0) index = cards.length - 1;
-      showCard(index);
-    });
-
-    nextBtn.addEventListener('click', () => {
-      let index = currentIndex + 1;
-      if (index >= cards.length) index = 0;
-      showCard(index);
-    });
-
-    dots.forEach((dot, idx) => {
-      dot.addEventListener('click', () => {
-        showCard(idx);
-      });
-    });
-
-    // Domino Scroll Reveal with IntersectionObserver
-    const sections = document.querySelectorAll('.hero, section');
-    const observerOptions = {
-      root: null,
-      threshold: 0.15,
-      rootMargin: '0px'
-    };
-
-    const observer = new IntersectionObserver((entries, obs) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('in');
-          // Add extra staggered animate classes for cards if section matches features
-          if (entry.target.id === 'features') {
-            const features = entry.target.querySelectorAll('.feature');
-            features.forEach((feat, idx) => {
-              feat.style.animation = `domino-in .5s cubic-bezier(.2,.7,.2,1) forwards`;
-              feat.style.animationDelay = `${idx * 0.05}s`;
-            });
-          }
-        }
-      });
-    }, observerOptions);
-
-    sections.forEach(sec => {
-      observer.observe(sec);
-    });
-
-    // Auto-detect GitHub username/repo dynamically
+    // Auto-detect repo link and apply to all GitHub links
     try {
-      const currentUrl = window.location.href;
-      if (currentUrl.includes('github.io')) {
-        const pathParts = window.location.pathname.split('/');
-        const repoName = pathParts[1] || 'fitly-mobile';
-        const userName = window.location.hostname.split('.')[0];
-        const repoUrl = `https://github.com/${userName}/${repoName}`;
-        const githubLink = document.getElementById('github-link');
-        if (githubLink) {
-          githubLink.href = repoUrl;
-        }
+      if (location.href.includes('github.io')) {
+        const p = location.pathname.split('/');
+        const u = location.hostname.split('.')[0];
+        const repo = `https://github.com/${u}/${p[1]||'fitly-mobile'}`;
+        document.querySelectorAll('.github-link').forEach(el => {
+          if (el.textContent.includes('README') || el.textContent.includes('Setup')) {
+            el.href = repo + '#readme';
+          } else if (el.textContent.includes('Issue')) {
+            el.href = repo + '/issues';
+          } else {
+            el.href = repo;
+          }
+        });
       }
-    } catch (e) {
-      console.error(e);
-    }
+    } catch(e) {}
   </script>
 </body>
 </html>

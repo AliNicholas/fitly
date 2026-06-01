@@ -30,6 +30,7 @@ import {
   Clock,
   Check,
   ChevronRight,
+  X,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import Svg, { Circle } from 'react-native-svg';
@@ -54,6 +55,9 @@ export default function CaloriesScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const [containerHeight, setContainerHeight] = useState(0);
   const [activeSection, setActiveSection] = useState(0);
+
+  // Timer references for AI scan simulation to prevent duplicate/cancelled runs and memory leaks
+  const activeTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
 
   // Global Calorie Data State
   const [loading, setLoading] = useState(true);
@@ -169,20 +173,44 @@ export default function CaloriesScreen() {
     }, [loadCalorieData])
   );
 
-  // Automated background scan simulation
+  // Clean up all active timers when the component unmounts
   useEffect(() => {
-    // Check if there are processing entries
-    const processingItem = allEntries.find((e) => e.status === 'processing');
-    if (processingItem) {
-      const timer = setTimeout(async () => {
-        // Complete the scanning state by changing status to completed
-        await updateCalorieEntry(processingItem.id, { status: 'completed' });
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        loadCalorieData();
-      }, 1500); // 1.5 seconds simulated processing delay
+    return () => {
+      activeTimersRef.current.forEach((timer) => clearTimeout(timer));
+      activeTimersRef.current.clear();
+    };
+  }, []);
 
-      return () => clearTimeout(timer);
-    }
+  // Automated background scan simulation with robust tracking to prevent race conditions and freezes
+  useEffect(() => {
+    const processingItems = allEntries.filter((e) => e.status === 'processing');
+
+    processingItems.forEach((item) => {
+      const itemId = item.id;
+      if (!activeTimersRef.current.has(itemId)) {
+        const timer = setTimeout(async () => {
+          try {
+            await updateCalorieEntry(itemId, { status: 'completed' });
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            await loadCalorieData();
+          } catch (err) {
+            console.error('Failed to complete background food scan simulation:', err);
+          } finally {
+            activeTimersRef.current.delete(itemId);
+          }
+        }, 1500);
+
+        activeTimersRef.current.set(itemId, timer);
+      }
+    });
+
+    // Clean up timers for any items that were deleted/removed from allEntries
+    activeTimersRef.current.forEach((timer, itemId) => {
+      if (!allEntries.some((e) => e.id === itemId)) {
+        clearTimeout(timer);
+        activeTimersRef.current.delete(itemId);
+      }
+    });
   }, [allEntries, loadCalorieData]);
 
   // Handle section scrolling
@@ -390,8 +418,7 @@ export default function CaloriesScreen() {
           ref={scrollRef}
           pagingEnabled
           showsVerticalScrollIndicator={false}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
+          onMomentumScrollEnd={handleScroll}
           className="flex-1"
         >
           {/* ======================================================== */}
