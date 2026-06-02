@@ -25,7 +25,7 @@
         <a href="#features" data-i18n="nav-features">Features</a>
         <a href="#explore" data-i18n="nav-explore">Explore</a>
         <a href="#privacy" data-i18n="nav-privacy">Privacy</a>
-        <a href="#testimonials" data-i18n="nav-reviews">Reviews</a>
+
         <a href="#download" class="btn primary btn-sm" data-i18n="nav-get-started">Get Started</a>
         <button id="lang-toggle" class="lang-btn" aria-label="Switch Language">
           <i data-lucide="globe"></i>
@@ -57,8 +57,8 @@
         </div>
       </div>
       <div class="mockup-container">
-        <div class="mockup-frame">
-          <img src="dashboard.png" alt="Fitly Mobile Dashboard Mockup" loading="eager">
+        <div class="hero-illustration">
+          <img src="hero.png" alt="Fitness data visualization concept" loading="eager">
         </div>
       </div>
     </div>
@@ -103,28 +103,28 @@
 
       <div class="tabs-layout">
         <div class="tab-selectors">
-          <div class="tab-selector-item active" data-target="dashboard-img">
+          <div class="tab-selector-item active">
             <div class="tab-selector-header">
               <i data-lucide="layout-dashboard"></i>
               <span data-i18n="tab1-title">Dashboard &amp; Analytics</span>
             </div>
             <p data-i18n="tab1-desc">See your training metrics at a glance — total sessions, active streaks, and a beautiful workout calendar heatmap.</p>
           </div>
-          <div class="tab-selector-item" data-target="dashboard-img">
+          <div class="tab-selector-item">
             <div class="tab-selector-header">
               <i data-lucide="dumbbell"></i>
               <span data-i18n="tab2-title">Workout Logger &amp; Vault</span>
             </div>
             <p data-i18n="tab2-desc">Log sets, reps, and weights in real-time, swipe history, and customize exercises across muscular categories.</p>
           </div>
-          <div class="tab-selector-item" data-target="coach-img">
+          <div class="tab-selector-item">
             <div class="tab-selector-header">
               <i data-lucide="message-square"></i>
               <span data-i18n="tab3-title">Your Personal AI Coach</span>
             </div>
             <p data-i18n="tab3-desc">Chat with a built-in Gemini assistant that reads your actual workout stats to draft custom routines and tips.</p>
           </div>
-          <div class="tab-selector-item" data-target="dashboard-img">
+          <div class="tab-selector-item">
             <div class="tab-selector-header">
               <i data-lucide="flame"></i>
               <span data-i18n="tab4-title">Macros &amp; Calorie Tracker</span>
@@ -134,9 +134,8 @@
         </div>
 
         <div class="tab-preview-container">
-          <div class="tab-preview-frame">
-            <img src="dashboard.png" id="dashboard-img" class="tab-screenshot active" alt="Fitly App Dashboard Screen">
-            <img src="coach.png" id="coach-img" class="tab-screenshot" alt="Fitly AI Coach Screen">
+          <div class="explore-illustration">
+            <img src="explore.png" alt="AI coaching and fitness features concept">
           </div>
         </div>
       </div>
@@ -159,83 +158,12 @@
         </ul>
       </div>
       <div class="privacy-diagram-container">
-        <img src="privacy.png" class="privacy-diagram" alt="Local Storage & Privacy First Diagram">
+        <img src="privacy-new.png" class="privacy-diagram" alt="Data sovereignty and privacy shield concept">
       </div>
     </div>
   </section>
 
-  <!-- Testimonials -->
-  <section id="testimonials">
-    <div class="wrap">
-      <div class="section-header">
-        <div class="eyebrow" data-i18n="test-eyebrow">Reviews</div>
-        <h2 data-i18n="test-title">Athletes who switched never looked back</h2>
-        <p data-i18n="test-sub">Hear from real trainees who cancelled their subscriptions to use Fitly.</p>
-      </div>
 
-      <div class="tcarousel-wrap">
-        <button class="tarrow prev" id="carousel-prev-btn"><i data-lucide="chevron-left"></i></button>
-        <div class="tgrid" id="carousel-container">
-
-          <div class="tcard active">
-            <div class="av">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#a6ff00" opacity="0.15"/><circle cx="50" cy="40" r="20" fill="#a6ff00"/><path d="M15 80C15 65 30 58 50 58C70 58 85 65 85 80" fill="#a6ff00"/></svg>
-            </div>
-            <div class="tmeta">
-              <div class="stars">★★★★★</div>
-              <div class="q" data-i18n="test-r1-quote">"I cancelled my $15/month app the same day. Fitly does everything it did — plus the AI coach actually knows my workout history."</div>
-              <div class="nm">Sarah K.</div>
-              <div class="rl" data-i18n="test-r1-role">Software Engineer & Trainee</div>
-            </div>
-          </div>
-
-          <div class="tcard">
-            <div class="av">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#a6ff00" opacity="0.15"/><circle cx="50" cy="40" r="20" fill="#a6ff00"/><path d="M15 80C15 65 30 58 50 58C70 58 85 65 85 80" fill="#a6ff00"/></svg>
-            </div>
-            <div class="tmeta">
-              <div class="stars">★★★★★</div>
-              <div class="q" data-i18n="test-r2-quote">"The calorie tracker alone is worth it. Photo logging, daily targets, the consistency heatmap — I've never been this consistent with my nutrition."</div>
-              <div class="nm">Marcus T.</div>
-              <div class="rl" data-i18n="test-r2-role">Powerlifter</div>
-            </div>
-          </div>
-
-          <div class="tcard">
-            <div class="av">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#a6ff00" opacity="0.15"/><circle cx="50" cy="40" r="20" fill="#a6ff00"/><path d="M15 80C15 65 30 58 50 58C70 58 85 65 85 80" fill="#a6ff00"/></svg>
-            </div>
-            <div class="tmeta">
-              <div class="stars">★★★★★</div>
-              <div class="q" data-i18n="test-r3-quote">"I asked the AI coach 'what should I train today?' and it gave me a full session based on what I hadn't hit in 5 days. Insane."</div>
-              <div class="nm">Dev R.</div>
-              <div class="rl" data-i18n="test-r3-role">Gym Enthusiast</div>
-            </div>
-          </div>
-
-          <div class="tcard">
-            <div class="av">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#a6ff00" opacity="0.15"/><circle cx="50" cy="40" r="20" fill="#a6ff00"/><path d="M15 80C15 65 30 58 50 58C70 58 85 65 85 80" fill="#a6ff00"/></svg>
-            </div>
-            <div class="tmeta">
-              <div class="stars">★★★★★</div>
-              <div class="q" data-i18n="test-r4-quote">"Zero loading screens. Zero login walls. I open the app and I'm immediately logging. This is how software should work."</div>
-              <div class="nm">Jen A.</div>
-              <div class="rl" data-i18n="test-r4-role">Gym Owner</div>
-            </div>
-          </div>
-
-        </div>
-        <button class="tarrow next" id="carousel-next-btn"><i data-lucide="chevron-right"></i></button>
-      </div>
-      <div class="tnav" id="carousel-dots-container">
-        <span class="tdot on" data-index="0"></span>
-        <span class="tdot" data-index="1"></span>
-        <span class="tdot" data-index="2"></span>
-        <span class="tdot" data-index="3"></span>
-      </div>
-    </div>
-  </section>
 
   <!-- Ready to Download -->
   <section id="download" class="download-section">
@@ -464,55 +392,18 @@
 
     // Interactive Screen Tab Switcher
     const tabItems = document.querySelectorAll('.tab-selector-item');
-    const screenshots = document.querySelectorAll('.tab-screenshot');
 
     tabItems.forEach(item => {
       const switchTab = () => {
         tabItems.forEach(t => t.classList.remove('active'));
-        screenshots.forEach(s => s.classList.remove('active'));
-
         item.classList.add('active');
-        const targetId = item.getAttribute('data-target');
-        const activeScreen = document.getElementById(targetId);
-        if (activeScreen) {
-          activeScreen.classList.add('active');
-        }
       };
 
       item.addEventListener('mouseenter', switchTab);
       item.addEventListener('click', switchTab);
     });
 
-    // Testimonials Carousel
-    const cards = document.querySelectorAll('.tcard');
-    const dots = document.querySelectorAll('.tdot');
-    let currentIndex = 0;
 
-    function showSlide(index) {
-      cards.forEach((card, idx) => {
-        card.classList.remove('active');
-        dots[idx].classList.remove('on');
-      });
-      cards[index].classList.add('active');
-      dots[index].classList.add('on');
-      currentIndex = index;
-    }
-
-    document.getElementById('carousel-prev-btn').addEventListener('click', () => {
-      let index = currentIndex - 1;
-      if (index < 0) index = cards.length - 1;
-      showSlide(index);
-    });
-
-    document.getElementById('carousel-next-btn').addEventListener('click', () => {
-      let index = currentIndex + 1;
-      if (index >= cards.length) index = 0;
-      showSlide(index);
-    });
-
-    dots.forEach((dot, idx) => {
-      dot.addEventListener('click', () => showSlide(idx));
-    });
 
     // Auto-detect GitHub Pages repository URL fallback
     try {

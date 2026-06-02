@@ -12,6 +12,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   KeyboardAvoidingView,
+  Keyboard,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -95,6 +96,25 @@ export default function CaloriesScreen() {
   const [modalTitle, setModalTitle] = useState('');
   const [modalUnit, setModalUnit] = useState('');
   const [modalValue, setModalValue] = useState('');
+
+  // Keyboard tracking state to lock viewport layout height when keyboard appears
+  const [isKeyboardActive, setIsKeyboardActive] = useState(false);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'android' ? 'keyboardDidShow' : 'keyboardWillShow',
+      () => setIsKeyboardActive(true)
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'android' ? 'keyboardDidHide' : 'keyboardWillHide',
+      () => setIsKeyboardActive(false)
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const handleOpenInputModal = (
     field: 'age' | 'height' | 'weight' | 'targetWeight',
@@ -381,7 +401,8 @@ export default function CaloriesScreen() {
       className="flex-1 bg-[#f8fafc] dark:bg-[#050510]"
     >
       <View
-        className="flex-1"
+        style={isKeyboardActive && containerHeight > 0 ? { height: containerHeight, flex: 0 } : undefined}
+        className={isKeyboardActive && containerHeight > 0 ? "" : "flex-1"}
         onLayout={(e) => {
           const height = e.nativeEvent.layout.height;
           setContainerHeight((current) => (height > current ? height : current));
